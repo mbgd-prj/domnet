@@ -1,0 +1,32 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM THRESHOLD
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($THRESHOLD) = shift @ARGV;
+
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    chomp;
+    my @f = split("\t", $_);
+    my ($coverage, $ratio, $name, $taxid) = @f[1,2,3,4];
+
+    if ($ratio ne "=1/1" and $coverage >= $THRESHOLD) {
+	# print "$name\t$taxid\n";
+	# print "$taxid\t$name\n";
+	print $_, "\n";
+    }
+}

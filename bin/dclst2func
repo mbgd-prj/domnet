@@ -1,0 +1,44 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM DCLST
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+!@ARGV && -t and die $USAGE;
+my ($CLUSTER, $MBGD, $COG, $KEGG, $TIGR) = ();
+while (<>) {
+    if (/^#SPECIES=(.*)$/) {
+    } elsif (/^HomCluster (\d+)$/) {
+    # } elsif (/^Cluster (\d+)$/) {
+    } elsif (/^Cluster (\S+)$/) {
+	$CLUSTER = $1;
+	($MBGD, $COG, $KEGG, $TIGR) = ();
+    } elsif (/^#CGene\t(.*)/) {
+    } elsif (/^#CFuncMbgd\t(.*)/) {
+	$MBGD = $1;
+    } elsif (/^#CFuncCog\t(.*)/) {
+	$COG = $1;
+    } elsif (/^#CFuncKegg\t(.*)/) {
+	$KEGG = $1;
+    } elsif (/^#CFuncTigr\t(.*)/) {
+	$TIGR = $1;
+    } elsif (/^#CDescr\t(.*)/) {
+    } elsif (/^#CScore\t(.*)/) {
+    } elsif (/^#CDist\t(.*)/) {
+    } elsif (/^(\w+:\S+)\t(\d+)\t(\d+)\t(\d+)$/) {
+    } elsif (/^\//) {
+	if (defined $CLUSTER and defined $MBGD and defined $COG and defined $KEGG and defined $TIGR) {
+	    print join("\t", $CLUSTER, $MBGD, $COG, $KEGG, $TIGR), "\n";
+	}
+	($CLUSTER, $MBGD, $COG, $KEGG, $TIGR) = ();
+    } elsif (/^#/) {
+    } else {
+	print STDERR "WARNING: skipped invalid line: $_";
+    }
+}

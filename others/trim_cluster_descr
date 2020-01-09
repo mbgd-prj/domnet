@@ -1,0 +1,31 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat CLUSTER_DESCR | $PROGRAM
+-l LENGTH
+";
+
+my %OPT;
+getopts('l:', \%OPT);
+
+my $LENGTH = $OPT{l} || 20;
+
+-t and die $USAGE;
+while (<STDIN>) {
+    chomp;
+    my ($cluster, $description) = split("\t", $_);
+    print "$cluster\t";
+    print "$cluster(";
+    if (length($cluster) + length($description) + 2 > $LENGTH) {
+    	print substr($description, 0, $LENGTH - length($cluster) - 2 - 2), "..";
+    # if (length($description) > $LENGTH) {
+    # 	print substr($description, 0, $LENGTH - 2), "..";
+    } else {
+	print $description;
+    }
+    print ")";
+    print "\n";
+}

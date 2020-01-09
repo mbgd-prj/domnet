@@ -1,0 +1,46 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM FILE COL1 COL2 COL_NAME1 COL_NAME2
+-p PREFIX
+-x: log scale
+-y: log scale
+-f: force create
+-l: linear regression
+";
+
+my %OPT;
+getopts('p:xyfl', \%OPT);
+
+my $PREFIX = "";
+if ($OPT{p}) {
+    $PREFIX = $OPT{p} . ".";
+}
+
+my $OPTION = "";
+if ($OPT{x}) {
+    $OPTION .= " -x";
+}
+if ($OPT{y}) {
+    $OPTION .= " -y";
+}
+if ($OPT{l}) {
+    $OPTION .= " -l";
+}
+
+if (@ARGV != 5) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($file, $col1, $col2, $colname1, $colname2) = @ARGV;
+
+if (! $OPT{f} and -e "$PREFIX${colname1}_${colname2}.pdf") {
+    exit;
+}
+
+system "cat $file | cut -f $col1,$col2 | grep -v NA | grep -v Inf | ~/etc/domnet/lib/domnet_plot.R $OPTION $colname1 $colname2";
+system "mv Rplots.pdf $PREFIX${colname1}_${colname2}.pdf";
+system "mv Rplots.png $PREFIX${colname1}_${colname2}.png";

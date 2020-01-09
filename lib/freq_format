@@ -1,0 +1,22 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    chomp;
+    # if (/^\s*(\d+)\s(\S+)$/) {
+    if (/^\s*(\d+)\s(\S.*)$/) {
+	print "$2\t$1\n";
+    } else {
+	die;
+    }
+}

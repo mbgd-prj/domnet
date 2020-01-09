@@ -1,0 +1,104 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+use POSIX;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat CLUSTER_SET | $PROGRAM -s cluster.size
+determine fusion/fission/others, list of organisms linked
+-f cluster.func: check functional difference between linked clusters
+-u: uniq organisms
+-R: output repeat too
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+use DomRefine::General;
+use DomRefine::Read;
+use DomRefine::Refine;
+
+### Settings ###
+my %OPT;
+getopts('s:f:uR', \%OPT);
+
+my $CLUSTER_SIZE = $OPT{s} || die $USAGE;
+my %CLUSTER_SIZE = ();
+read_values($CLUSTER_SIZE, \%CLUSTER_SIZE);
+
+my %FUNC = ();
+if ($OPT{f} and -f $OPT{f}) {
+    read_cluster_functions($OPT{f}, \%FUNC);
+}
+
+### Read cluster members ###
+-t and die $USAGE;
+my %DOMAIN = ();
+my %CLUSTER_MEMBER = ();
+my $FH = *STDIN;
+parse_cluster_members($FH, \%DOMAIN, \%CLUSTER_MEMBER);
+
+### Adjacent ###
+my %ADJACENT = ();
+get_adjacency_information_detail(\%DOMAIN, \%ADJACENT);
+
+### Print ###
+for my $cluster1 (sort {$a cmp $b} keys %ADJACENT) {
+    for my $cluster2 (sort {$a cmp $b} keys %{$ADJACENT{$cluster1}}) {
+	if ($OPT{R}) {
+	} else {
+	    next if $cluster1 eq $cluster2; # remove repeat
+	}
+
+	my $cluster_size1= $CLUSTER_SIZE{$cluster1} || die $cluster1;
+	my $cluster_size2= $CLUSTER_SIZE{$cluster2} || die $cluster2;
+	my $ratio1 = $ADJACENT{$cluster1}{$cluster2}{n} / $cluster_size1;
+	my $ratio2 = $ADJACENT{$cluster1}{$cluster2}{n} / $cluster_size2;
+	my $fusion_ratio = max($ratio1, $ratio2);
+	my $fission_ratio = max(1 - $ratio1, 1 - $ratio2);
+	my $link_type;
+	if ($fusion_ratio <= 0.3) {
+	    $link_type = "FUSION";
+	} elsif ($fission_ratio <= 0.3) {
+	    $link_type = "FISSION";
+	} else {
+	    $link_type = "OTHERS";
+	}
+
+	my @organism_fused = ();
+	if ($OPT{u}) {
+	    @organism_fused = sort keys %{$ADJACENT{$cluster1}{$cluster2}{org}};
+	} else {
+	    for my $org (sort keys %{$ADJACENT{$cluster1}{$cluster2}{org}}) {
+		for (my $i=0; $i<$ADJACENT{$cluster1}{$cluster2}{org}{$org}; $i++) {
+		    push @organism_fused, $org;
+		}
+	    }
+	}
+	my %organism_split = ();
+	for my $gene_domain (keys(%{$CLUSTER_MEMBER{$cluster1}}), keys(%{$CLUSTER_MEMBER{$cluster2}})) {
+	    if ($ADJACENT{$cluster1}{$cluster2}{domain}{$gene_domain}) {
+	    } else {
+		if ($gene_domain =~ /^(\S+?):/) {
+		    my $sp = $1;
+		    $organism_split{$sp} = 1;
+		} else {
+		    die;
+		}
+	    }
+	}
+	my @organism_split = sort keys %organism_split;
+	my $organism_split = "";
+	if (@organism_split) {
+	    $organism_split = join(",", @organism_split);
+	}
+
+	my $out = "$cluster1-$cluster2" . "\t" . $ADJACENT{$cluster1}{$cluster2}{n} . "\t" . $fusion_ratio .
+	    "\t" . $link_type . "\t" . join(",", @organism_fused) . "\t" . $organism_split;
+	my @out = ();
+	if ($OPT{f} and -f $OPT{f}) {
+	    my $func = get_cluster_functions_all("$cluster1-$cluster2", \%FUNC);
+	    push @out, $func;
+	}
+	print join("\t", $out, @out), "\n";
+    }
+}

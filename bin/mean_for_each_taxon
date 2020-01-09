@@ -1,0 +1,157 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM -p TAXON_NODE_PARENTS -d TAXON_NODE_DESCENDENTS [-v COL] [SP_FUSION_RATE]
+";
+
+use DomRefine::General;
+
+### Options ###
+my %OPT;
+getopts('p:d:v:', \%OPT);
+
+my $TAXON_NODE_PARENTS = $OPT{p} || die $USAGE;
+my %PARENT = ();
+my %CHILDREN = ();
+read_taxon_node_parents($TAXON_NODE_PARENTS, \%PARENT, \%CHILDREN);
+
+my $TAXON_NODE_DESCENDENTS = $OPT{d} || die $USAGE;
+my %DESCENDENTS = ();
+read_taxon_node_parents($TAXON_NODE_DESCENDENTS, \%DESCENDENTS);
+
+my $COL = $OPT{v} || 2;
+my $COL_IDX = $COL - 1;
+
+### Read data ###
+my %SAMPLE_VALUE = ();
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    chomp;
+    my @f = split;
+    my $sp = $f[0];
+    my $value = $f[$COL_IDX];
+
+    $SAMPLE_VALUE{$sp} = $value;
+}
+
+my $ALL_SP = join(",", sort keys %SAMPLE_VALUE);
+
+for my $taxon_node (sort {$a <=> $b} keys %PARENT) {
+    my $parent = $PARENT{$taxon_node};
+    if ($DESCENDENTS{$taxon_node} eq $DESCENDENTS{$parent}) {
+	next;
+    }
+    my @sample_value = sample_values(split(",", $DESCENDENTS{$taxon_node}));
+    my @sister_value = sample_values(complement($DESCENDENTS{$parent}, $DESCENDENTS{$taxon_node}));
+    my @complement_value = sample_values(complement($ALL_SP, $DESCENDENTS{$taxon_node}));
+
+    my $sample_mean = mean(@sample_value);
+
+    if (! defined $sample_mean) {
+	print join("\t", $taxon_node, $sample_mean, "NA", "NA", "NA", "NA"), "\n";
+    } else {
+	my $vs_sister_log = get_log(\@sample_value, \@sister_value);
+	my $vs_sister_pval = wilcox_test(\@sample_value, \@sister_value);
+	
+	my $vs_compl_log = get_log(\@sample_value, \@complement_value);
+	my $vs_compl_pval = wilcox_test(\@sample_value, \@complement_value);
+	
+	print join("\t", $taxon_node, $sample_mean, $vs_sister_pval, $vs_sister_log, $vs_compl_pval, $vs_compl_log), "\n";
+    }
+}
+
+################################################################################
+### Functions ##################################################################
+################################################################################
+sub wilcox_test {
+    my ($r_positive_sample_value, $r_negative_sample_value) = @_;
+
+    my $positive_sample_value = join(",", @{$r_positive_sample_value});
+    my $negative_sample_value = join(",", @{$r_negative_sample_value});
+
+    my @result = `rscript -e 'wilcox.test(c($positive_sample_value), c($negative_sample_value))\$p.value'`;
+    chomp(@result);
+
+    my $result;
+    if (@result == 1 and $result[0] =~ /^\[1\] (\S+)$/) {
+	$result = $1;
+    } else {
+	die;
+    }
+
+    return $result;
+}
+
+sub get_log {
+    my ($r_positive_sample_value, $r_negative_sample_value) = @_;
+
+    my $positive_sample_mean = mean(@{$r_positive_sample_value});
+    my $negative_sample_mean = mean(@{$r_negative_sample_value});
+
+    if ($positive_sample_mean == 0) {
+	return "-Inf";
+    } elsif ($negative_sample_mean) {
+	return log2($positive_sample_mean/$negative_sample_mean);
+    } else {
+	return "NA";
+    }
+}
+
+sub sample_values {
+    my @sample = @_;
+
+    my @value = ();
+    for my $sample (@sample) {
+	if (defined $SAMPLE_VALUE{$sample}) {
+	    push @value, $SAMPLE_VALUE{$sample};
+	} else {
+	    die;
+	}
+    }
+
+    return @value;
+}
+
+sub read_taxon_node_parents {
+    my ($file, $r_parent, $r_children) = @_;
+
+    open(PARENT, $file) || die;
+    while (<PARENT>) {
+	my ($taxon_node, $parent) = split;
+	${$r_parent}{$taxon_node} = $parent;
+	${$r_children}{$parent}{$taxon_node} = 1;
+    }
+    close(PARENT);
+}
+
+sub read_taxon_node_descendents {
+    my ($file, $r_descendents) = @_;
+
+    open(DESCENDENTS, $file) || die;
+    while (<DESCENDENTS>) {
+	my ($taxon_node, $descendents) = split("\t", $_);
+	${$r_descendents}{$taxon_node} = $descendents;
+    }
+    close(DESCENDENTS);
+}
+
+sub complement {
+    my ($all, $samples) = @_;
+
+    my %checked = ();
+    for my $sample (split(",", $samples)) {
+	$checked{$sample} = 1;
+    }
+
+    my @complement = ();
+    for my $sample (split(",", $all)) {
+	if (! $checked{$sample}) {
+	    push @complement, $sample;
+	}
+    }
+
+    return @complement;
+}

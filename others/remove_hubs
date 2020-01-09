@@ -1,0 +1,65 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK_LIST | $PROGRAM CLUSTER_SIZE_LIST
+-n N_TO_REMOVE
+-d MAX_DEGREE
+";
+
+my %OPT;
+getopts('n:d:', \%OPT);
+
+my $N;
+my $DEGREE;
+if ($OPT{n}) {
+    $N = $OPT{n};
+} elsif ($OPT{d}) {
+    $DEGREE = $OPT{d};
+} else {
+    die $USAGE;
+}
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $CLUSTER_SIZE_LIST = shift @ARGV;
+
+### Read cluster list ###
+
+my %CHECK = ();
+my $COUNT = 0;
+for my $line (`cat $CLUSTER_SIZE_LIST | sort -k2,2nr`) {
+    chomp($line);
+    $COUNT ++;
+    my ($cluster, $degree) = split("\t", $line);
+    if ($OPT{n}) {
+	if ($COUNT <= $N) {
+	    $CHECK{$cluster} = 1;
+	}
+    } elsif ($OPT{d}) {
+	if ($degree <= $DEGREE) {
+	} else {
+	    $CHECK{$cluster} = 1;
+	}
+    }
+}
+
+### Read link list ###
+-t and die $USAGE;
+while (<STDIN>) {
+    chomp;
+    my ($link, $n_link, $link_ratio, $link_type, $sp_list) = split("\t", $_);
+    my ($cluster1, $cluster2) = split("-", $link);
+
+    my @sp = split(",", $sp_list);
+    my $n_sp = @sp;
+
+    if ($CHECK{$cluster1} || $CHECK{$cluster2}) {
+	next;
+    }
+    print join("\t", $cluster1, $cluster2, $n_sp, $link_ratio), "\n";
+}

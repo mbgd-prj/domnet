@@ -1,0 +1,124 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK_LIST | $PROGRAM CLUSTER_DEGREE
+-n N_TO_REMOVE
+-d MAX_DEGREE
+-t TAX_NAME
+-T SIGNIFICANT_TAXON_INFO
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('n:d:t:T:', \%OPT);
+
+
+my %TAX_NAME = ();
+if ($OPT{t}) {
+    read_values($OPT{t}, \%TAX_NAME);
+}
+
+my %SIGNIFICANT_TAXON = ();
+if ($OPT{T}) {
+    open(SIGNIFICANT_TAXON_INFO, $OPT{T}) || die;
+    while (<SIGNIFICANT_TAXON_INFO>) {
+	my @f = split("\t", $_);
+	my $link = $f[0];
+	my $significant_taxon = $f[3];
+	$SIGNIFICANT_TAXON{$link} = $significant_taxon;
+    }
+    close(SIGNIFICANT_TAXON_INFO)
+}
+
+### Read cluster list ###
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($CLUSTER_DEGREE) = @ARGV;
+
+my %BREAK = ();
+my $COUNT = 0;
+for my $line (`cat $CLUSTER_DEGREE | sort -k2,2nr`) {
+    chomp($line);
+    $COUNT ++;
+    my ($cluster, $degree) = split("\t", $line);
+    if ($OPT{n}) {
+	if ($COUNT <= $OPT{n}) {
+	    $BREAK{$cluster} = 1;
+	}
+    } elsif ($OPT{d}) {
+	if ($degree <= $OPT{d}) {
+	} else {
+	    $BREAK{$cluster} = 1;
+	}
+    }
+}
+
+### Read link ###
+-t and die $USAGE;
+
+my @HEADER = ("cluster1", "cluster2", "edge_type", "edge_name");
+if ($OPT{t}) {
+    push @HEADER, "prok_euk";
+}
+push @HEADER, ("edge_n_sp", "edge_with_ratio");
+push @HEADER, ("significant_taxon", "significant_taxon_full");
+print join("\t", @HEADER), "\n";
+
+my %REPLICATE = ();
+while (<STDIN>) {
+    chomp;
+    my ($link, $n_link, $link_ratio, $link_type, $sp_list) = split("\t", $_);
+    if (! $SIGNIFICANT_TAXON{$link}) {
+	next;
+    }
+    my ($cluster1, $cluster2) = split("-", $link);
+
+    my @sp = split(",", $sp_list);
+    my $n_sp = @sp;
+
+    my @out = ();
+    if ($BREAK{$cluster1} and $BREAK{$cluster2}) {
+	next;
+    } elsif ($BREAK{$cluster1}) {
+	if ($REPLICATE{$cluster1}) {
+	    $REPLICATE{$cluster1}++;
+	} else {
+	    $REPLICATE{$cluster1} = 1;
+	}
+	push @out, ("$cluster1.$REPLICATE{$cluster1}", $cluster2, "BREAK", "$cluster1.$REPLICATE{$cluster1}-$cluster2");
+    } elsif ($BREAK{$cluster2}) {
+	if ($REPLICATE{$cluster2}) {
+	    $REPLICATE{$cluster2}++;
+	} else {
+	    $REPLICATE{$cluster2} = 1;
+	}
+	push @out, ($cluster1, "$cluster2.$REPLICATE{$cluster2}", "BREAK", "$cluster1-$cluster2.$REPLICATE{$cluster2}");
+    } else {
+	push @out, ($cluster1, $cluster2, "CLUSTERS" , "$cluster1-$cluster2");
+    }
+
+    if ($OPT{t}) {
+	push @out, organisms_to_prok_euk($sp_list, \%TAX_NAME);
+    }
+
+    push @out, ($n_sp, $link_ratio);
+
+    if ($SIGNIFICANT_TAXON{$link}) {
+	my $significant_taxon_full = $SIGNIFICANT_TAXON{$link};
+	my $significant_taxon = $significant_taxon_full;
+	if ($significant_taxon_full =~ /(.*) \(\S+\)$/) {
+	    $significant_taxon = $1;
+	}
+	push @out, $significant_taxon, $significant_taxon_full;
+    } else {
+	print STDERR $link, "\n";
+    }
+
+    print join("\t", @out), "\n";
+}

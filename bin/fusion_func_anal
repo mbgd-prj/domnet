@@ -1,0 +1,146 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM -c CATEGORY -p PARALOG_FILE -r REF_FREQ
+-n COL : column in REF_FILE (default: 2)
+-f FUNC_DEF_FILE
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('c:p:r:n:f:', \%OPT);
+
+my $CATEGORY = $OPT{c} || die $USAGE;
+my $CATEGORY_LC = lc($CATEGORY);
+
+my $PARALOG_FILE = $OPT{p} || die $USAGE;
+my %PARALOG = ();
+read_paralog_file($PARALOG_FILE, \%PARALOG);
+
+my $REF_FREQ = $OPT{r} || die $USAGE;
+
+my $COLUMN = $OPT{n} || 2;
+
+my $FUNC_DEF_FILE = $OPT{f} || "/db/project/MBGD/database/function/$CATEGORY_LC/function.$CATEGORY_LC";
+my %FUNC_DEF = ();
+my @FUNC = ();
+read_func_def($FUNC_DEF_FILE, \%FUNC_DEF, \@FUNC);
+
+my %FUNC_FREQ = ();
+read_values($REF_FREQ, \%FUNC_FREQ, col => $COLUMN);
+
+!@ARGV && -t and die $USAGE;
+my %NEIGHBOR_FUNC = ();
+while (<>) {
+    my @f = split;
+    if (@f != 2) {
+	die;
+    }
+    my ($link, $func_link) = @f;
+    my ($cluster1, $cluster2) = split("-", $link);
+    my ($func1, $func2) = split("-", $func_link);
+
+    # print "$func1\t$func2\n";
+
+    if ($cluster1 eq $cluster2) {
+	$NEIGHBOR_FUNC{$func1}{$func2}++;
+    } else {
+	$NEIGHBOR_FUNC{$func1}{$func2}++;
+	$NEIGHBOR_FUNC{$func2}{$func1}++;
+    }
+}
+
+for my $func (@FUNC) {
+    my $freq_same = 0;
+    my $freq_diff = 0;
+    my $func_diff_unknown_freq = 0;
+    my @func_diff_top = ();
+    my $func_diff_top_freq = 0;
+    for my $linked_func (sort keys %{$NEIGHBOR_FUNC{$func}}) {
+	my $freq = $NEIGHBOR_FUNC{$func}{$linked_func};
+	my $check_func_diff = check_func_diff($func, $linked_func);
+	if ($check_func_diff eq "SAME") {
+	    $freq_same += $freq;
+	} elsif ($check_func_diff eq "UNKNOWN") {
+	    $func_diff_unknown_freq += $freq;
+	} else {
+	    $freq_diff += $freq;
+	    if ($freq > $func_diff_top_freq) {
+		$func_diff_top_freq = $freq;
+		@func_diff_top = ($linked_func);
+	    } elsif ($freq == $func_diff_top_freq) {
+		push @func_diff_top, $linked_func;
+	    }
+	}
+    }
+    my ($ratio_same, $ratio_diff, $ratio_unknown, $func_diff_top_ratio) = (0, 0, 0, 0);
+    my $total_freq = $freq_same + $freq_diff + $func_diff_unknown_freq;
+    if ($total_freq != 0) {
+	$ratio_same = $freq_same / $total_freq;
+	$ratio_diff = $freq_diff / $total_freq;
+	$ratio_unknown = $func_diff_unknown_freq / $total_freq;
+	$func_diff_top_ratio = $func_diff_top_freq / $total_freq;
+    }
+    my @func_diff_top_def = ();
+    for my $func_diff_top (@func_diff_top) {
+	push @func_diff_top_def, $FUNC_DEF{$func_diff_top} || "";
+    }
+    my $func_freq = 0;
+    my $average_link = 0;
+    if ($FUNC_FREQ{$func}) {
+	$func_freq = $FUNC_FREQ{$func};
+	$average_link = $total_freq / $func_freq;
+    }
+
+    my $n_domains_mean = $PARALOG{$func}{n_domains_mean} || 0;
+    my $n_sp_mean = $PARALOG{$func}{n_sp_mean} || 0;
+    my $n_paralogs_mean = $PARALOG{$func}{n_paralogs_mean} || 0;
+    print join("\t", $func, $FUNC_DEF{$func}, $func_freq, 
+	       $n_domains_mean, $n_sp_mean, $n_paralogs_mean,
+	       $total_freq, $average_link, 
+	       $freq_same, $ratio_same, $func_diff_unknown_freq, $ratio_unknown, $freq_diff, $ratio_diff,
+	       join("; ", @func_diff_top), join("; ", @func_diff_top_def), $func_diff_top_freq, $func_diff_top_ratio), "\n";
+}
+
+################################################################################
+### Function ###################################################################
+################################################################################
+sub check_func_diff {
+    my ($func1, $func2) = @_;
+
+    if ($func1 =~ /^\d+$/) {
+	$func2 = get_higher_function_hierarchy($func2);
+    }
+
+    if (check_if_defined_function($CATEGORY, $func1) and check_if_defined_function($CATEGORY, $func2)) {
+	if ($func1 eq $func2) {
+	    return "SAME";
+	} else {
+	    return "DIFFERENT";
+	}
+    } else {
+	return "UNKNOWN";
+    }
+}
+
+sub read_paralog_file {
+    my ($file, $r_paralog) = @_;
+
+    open(PARALOG, "$file") || die;
+    while (<PARALOG>) {
+	my @f = split;
+	if (@f != 5) {
+	    die;
+	}
+	my ($func, $n_domains_mean, $n_sp_mean, $n_paralogs_mean) = ($f[0], $f[2], $f[3], $f[4]);
+	${$r_paralog}{$func}{n_domains_mean} = $n_domains_mean;
+	${$r_paralog}{$func}{n_sp_mean} = $n_sp_mean;
+	${$r_paralog}{$func}{n_paralogs_mean} = $n_paralogs_mean;
+    }
+    close(PARALOG);
+}
+

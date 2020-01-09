@@ -1,0 +1,65 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK_FILE | $PROGRAM -o OUR_DIR CLUSTER_EURY_CREN
+";
+
+my %OPT;
+getopts('o:', \%OPT);
+
+my $OUT_DIR = $OPT{o} || die $USAGE;
+! -e $OUT_DIR and system "mkdir $OUT_DIR";
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $CLUSTER_EURY_CREN = shift @ARGV;
+
+-t and die $USAGE;
+
+### File settings
+my $OUT_EURY_CREN = "$OUT_DIR/link.eury_cren";
+my $OUT_EURY = "$OUT_DIR/link.eury";
+my $OUT_CREN = "$OUT_DIR/link.cren";
+
+### Read
+my %COUNT = ();
+open(REF, "$CLUSTER_EURY_CREN") || die;
+while (<REF>) {
+    my ($cluster, $eury_cren, $n_eury, $n_cren) = split;
+    $COUNT{$cluster}{eury} = $n_eury;
+    $COUNT{$cluster}{cren} = $n_cren;
+}
+close(REF);
+
+## Output
+open(EURY_CREN, ">$OUT_EURY_CREN") || die;
+open(EURY, ">$OUT_EURY") || die;
+open(CREN, ">$OUT_CREN") || die;
+while (<STDIN>) {
+    my ($link) = split("\t", $_);
+    if ($link =~ /^(\d+)-(\d+)$/) {
+	my ($cluster1, $cluster2) = ($1, $2);
+	if (! defined $COUNT{$cluster1}{eury}) {
+	    die "$cluster1 $_";
+	}
+	my $n_eury = $COUNT{$cluster1}{eury} + $COUNT{$cluster2}{eury};
+	my $n_cren = $COUNT{$cluster1}{cren} + $COUNT{$cluster2}{cren};
+	if ($n_eury and $n_cren) {
+	    print EURY_CREN $_;
+	} elsif ($n_eury) {
+	    print EURY $_;
+	} elsif ($n_cren) {
+	    print CREN $_;
+	}
+    } else {
+	die;
+    }
+}
+close(EURY_CREN);
+close(EURY);
+close(CREN);

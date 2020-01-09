@@ -1,0 +1,44 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM TAXON_RANK
+";
+
+### Read ini file ###
+use FindBin;
+my $DOMNET_DIR = "$FindBin::Bin";
+if ($DOMNET_DIR =~ /^(.+)\/lib$/) {
+    $DOMNET_DIR = $1;
+} else {
+    die "ERROR: $DOMNET_DIR is not a correct dir for $PROGRAM";
+}
+
+require "$DOMNET_DIR/pm/DomNet.pm";
+
+my %VALUE = ();
+read_ini_file("$DOMNET_DIR/etc/domnet.ini", \%VALUE);
+my $ENDPOINT = $VALUE{endpoint};
+
+### Main ###
+my %OPT;
+getopts('', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $TAXON_RANK = shift @ARGV;
+
+my @LINE = `cat | perl -pe 's/^/org:/' | spang $ENDPOINT mbgd2016/org2taxname $TAXON_RANK -as | perl -pe 's/^org://'`;
+chomp(@LINE);
+
+for my $line (@LINE) {
+    if ($line =~ /^(\S+)\t"(.*)"$/) {
+	print "$1\t$2\n";
+    } else {
+	die;
+    }
+}

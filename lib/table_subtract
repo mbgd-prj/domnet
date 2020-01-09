@@ -1,0 +1,37 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM KEY_VALUE1 KEY_VALUE2
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+### Arguments
+my %OPT;
+getopts('', \%OPT);
+
+if (@ARGV != 2) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($FILE1, $FILE2) = @ARGV;
+
+### Read other file values
+my %VALUE2 = ();
+read_lines_to_hash($FILE2, \%VALUE2);
+
+### Read keys and print values
+open(FILE1, "$FILE1") || die;
+while (<FILE1>) {
+    chomp;
+    my ($key, $value) = split("\t", $_);
+
+    if (defined $VALUE2{$key}) {
+	print join("\t", $key, $value - $VALUE2{$key}), "\n";
+    } else {
+	print STDERR "WARNING: value for $key is not found in $FILE2";
+    }
+}

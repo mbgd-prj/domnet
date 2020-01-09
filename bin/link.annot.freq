@@ -1,0 +1,26 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+!@ARGV && -t and die $USAGE;
+open(PIPE, "| freq -s") || die;
+while (<>) {
+    chomp;
+    my @f = split("\t", $_, -1);
+    if (@f != 14) {
+	die;
+    }
+    my ($tax_name, $tax_id, $cluster1, $cluster2) = @f[3,4,12,13];
+
+    print PIPE "$tax_name\t$tax_id\t$cluster1\n";
+    print PIPE "$tax_name\t$tax_id\t$cluster2\n";
+}
+close(PIPE);

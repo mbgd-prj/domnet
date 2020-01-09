@@ -1,0 +1,67 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM -k CLUSTER_PROK_EUK DIR
+";
+
+### Arguments
+my %OPT;
+getopts('k:', \%OPT);
+
+my $CLUSTER_PROK_EUK = $OPT{k} || die $USAGE;
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $DIR = shift @ARGV;
+
+### File settings
+my $INPUT = "$DIR/link.all";
+my $OUTPUT_PROK = "$DIR/link.prok";
+my $OUTPUT_EUK = "$DIR/link.euk";
+my $OUTPUT_PROK_EUK = "$DIR/link.prok_euk";
+
+### Read
+my %COUNT = ();
+open(REF, "$CLUSTER_PROK_EUK") || die;
+while (<REF>) {
+    my ($cluster, $prok_euk, $archaea, $bacteria, $eukaryota) = split;
+    $COUNT{$cluster}{"Archaea"} = $archaea;
+    $COUNT{$cluster}{"Bacteria"} = $bacteria;
+    $COUNT{$cluster}{"Eukaryota"} = $eukaryota;
+}
+close(REF);
+
+### Output
+open(INPUT, $INPUT) || die $USAGE;
+open(PROK, ">$OUTPUT_PROK") || die;
+open(EUK, ">$OUTPUT_EUK") || die;
+open(PROK_EUK, ">$OUTPUT_PROK_EUK") || die;
+while (<INPUT>) {
+    my ($link) = split("\t", $_);
+    if ($link =~ /^([^\-]+)-([^\-]+)$/) {
+	my ($cluster1, $cluster2) = ($1, $2);
+	my $archaea = $COUNT{$cluster1}{"Archaea"} + $COUNT{$cluster2}{"Archaea"};
+	my $bacteria = $COUNT{$cluster1}{"Bacteria"} + $COUNT{$cluster2}{"Bacteria"};
+	my $eukaryota = $COUNT{$cluster1}{"Eukaryota"} + $COUNT{$cluster2}{"Eukaryota"};
+	if (($archaea or $bacteria) and $eukaryota) {
+	    print PROK_EUK $_;
+	} elsif (($archaea or $bacteria) and ! $eukaryota) {
+	    print PROK $_;
+	} elsif (! ($archaea or $bacteria) and $eukaryota) {
+	    print EUK $_;
+	} else {
+	    die;
+	}
+    } else {
+	die;
+    }
+}
+close(INPUT);
+close(PROK);
+close(EUK);
+close(PROK_EUK);

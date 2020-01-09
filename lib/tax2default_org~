@@ -1,0 +1,45 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+### Read ini file ###
+use FindBin;
+my $DOMNET_DIR = "$FindBin::Bin";
+if ($DOMNET_DIR =~ /^(.+)\/lib$/) {
+    $DOMNET_DIR = $1;
+} else {
+    die "ERROR: $DOMNET_DIR is not a correct dir for $PROGRAM";
+}
+
+require "$DOMNET_DIR/pm/DomNet.pm";
+
+my %VALUE = ();
+read_ini_file("$DOMNET_DIR/etc/domnet.ini", \%VALUE);
+my $ENDPOINT = $VALUE{endpoint};
+
+### Main ###
+use DomRefine::Read;
+
+### Settings
+my $MAX_LINE = 20000;
+
+my %OPT;
+getopts('', \%OPT);
+
+my $TMP_FILE = define_tmp_file("$PROGRAM.tmp");
+END {
+    remove_tmp_file($TMP_FILE);
+}
+
+system "cat | perl -pe 's/^/taxid:/' | spang $ENDPOINT mbgd2016/tax2default_org -a > $TMP_FILE";
+my @LINE = `cat $TMP_FILE`;
+if (@LINE >= 20000) {
+    die "too many results (>= $MAX_LINE)";
+}
+
+system "cat $TMP_FILE | perl -pe 's/taxid://; s/org://' | sort -k1,1n -k2,2 | r.wrap_field2.rb";

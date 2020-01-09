@@ -1,0 +1,62 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat CLUSTER_LINK | $PROGRAM -t SP_TAXNAME
+";
+
+my %OPT;
+getopts('t:', \%OPT);
+
+my $TAX_FILE = $OPT{t} || die $USAGE;
+
+my %KINGDOM = ();
+open(FILE, "$TAX_FILE") || die;
+while (<FILE>) {
+    chomp;
+    my ($sp, $taxname) = split("\t", $_);
+    $KINGDOM{$sp} = $taxname;
+    if ($taxname eq "Archaea") {
+    } elsif ($taxname eq "Bacteria") {
+    } elsif ($taxname eq "Eukaryota") {
+    } else {
+	die $taxname;
+    }
+}
+close(FILE);
+
+-t and die $USAGE;
+while (<STDIN>) {
+    chomp;
+    my @f = split("\t", $_);
+    my ($link, $n_link, $fusion_ratio, $type, $organism_fused, $organism_split) = @f;
+    my $prok_euk1 = determine_prok_euk($organism_fused);
+    my $prok_euk2 = determine_prok_euk($organism_split);
+    print join("\t", $link, $prok_euk1, $prok_euk2, @f[1..$#f]), "\n";
+}
+
+################################################################################
+### Functions ##################################################################
+################################################################################
+sub determine_prok_euk {
+    my ($organisms) = @_;
+
+    my @organism = split(",", $organisms);
+    my %count = ();
+    for my $organism (@organism) {
+	my $taxname = $KINGDOM{$organism};
+	$count{$taxname} ++;
+    }
+
+    if (($count{"Archaea"} or $count{"Bacteria"}) and $count{"Eukaryota"}) {
+	return "prok_euk";
+    } elsif (($count{"Archaea"} or $count{"Bacteria"}) and ! $count{"Eukaryota"}) {
+	return "prok";
+    } elsif (! ($count{"Archaea"} or $count{"Bacteria"}) and $count{"Eukaryota"}) {
+	return "euk";
+    } else {
+	return "NULL";
+    }
+}

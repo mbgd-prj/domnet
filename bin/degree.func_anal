@@ -1,0 +1,80 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat CLUSTER_DEGREE | $PROGRAM CLUSTER_FUNCTIONS CATEGORY
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('f:', \%OPT);
+
+!@ARGV and die $USAGE;
+my ($CLUSTER_FUNCTIONS, $CATEGORY) = @ARGV;
+
+my $COL;
+if ($CATEGORY eq "MBGD") {
+    $COL = 2;
+} elsif ($CATEGORY eq "COG") {
+    $COL = 3;
+} elsif ($CATEGORY eq "KEGG") {
+    $COL = 4;
+} elsif ($CATEGORY eq "TIGR") {
+    $COL = 5;
+} else {
+    die;
+}
+
+my %CLUSTER_FUNC = ();
+open(CLUSTER_FUNCTIONS, "$CLUSTER_FUNCTIONS") || die;
+while (<CLUSTER_FUNCTIONS>) {
+    chomp;
+    my @f = split("\t", $_, -1);
+    if (@f != 5) {
+	die;
+    }
+    my ($cluster, $function) = @f[0,$COL-1];
+    $CLUSTER_FUNC{$cluster} = $function;
+}
+close(CLUSTER_FUNCTIONS);
+
+-t and die $USAGE;
+my %DEGREE = ();
+while (<STDIN>) {
+    chomp;
+    my @f = split("\t", $_);
+    if (@f != 2) {
+	die;
+    }
+    my ($cluster, $degree) = @f;
+
+    if ($CLUSTER_FUNC{$cluster}) {
+	my $func = $CLUSTER_FUNC{$cluster};
+	push @{$DEGREE{$func}}, $degree;
+    } else {
+	push @{$DEGREE{'o'}}, $degree;
+    }
+}
+
+my $CATEGORY_LC = lc($CATEGORY);
+my $FUNC_DEF_FILE = $OPT{f} || "/db/project/MBGD/database/function/$CATEGORY_LC/function.$CATEGORY_LC";
+my %FUNC_DEF = ();
+my @FUNC = ();
+read_func_def($FUNC_DEF_FILE, \%FUNC_DEF, \@FUNC);
+
+for my $func (@FUNC) {
+    my $degrees = '';
+    if ($DEGREE{$func}) {
+	$degrees = join(",", @{$DEGREE{$func}});
+    }
+    print "$func\t$FUNC_DEF{$func}\t$degrees\n";
+}
+
+my $degrees = '';
+if ($DEGREE{'o'}) {
+    $degrees = join(",", @{$DEGREE{'o'}});
+}
+print "o\tOthers\t$degrees\n";

@@ -1,0 +1,60 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat CLUSTER_FILE | $PROGRAM TAXNAME
+";
+
+use DomRefine::Read;
+
+my %OPT;
+getopts('', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $TAXNAME_FILE = shift @ARGV;
+
+### Read taxon info
+my %TAXNAME = ();
+open(TAXNAME, "$TAXNAME_FILE") || die;
+while (<TAXNAME>) {
+    chomp;
+    my ($sp, $taxname) = split("\t", $_);
+    $TAXNAME{$sp} = $taxname;
+}
+close(TAXNAME);
+
+### Read input clusters
+my %CLUSTER = ();
+my %CLUSTER_COUNT = ();
+-t and die $USAGE;
+while (<STDIN>) {
+    my ($cluster, $gene, @domain_info) = decompose_dclst_line($_);
+    $CLUSTER{$cluster}++;
+    my ($sp, $name) = decompose_gene_id($gene);
+    if ($TAXNAME{$sp}) {
+	$CLUSTER_COUNT{$cluster}{$TAXNAME{$sp}}++;
+    }
+}
+
+### Output
+for my $cluster (sort {$a <=> $b} keys %CLUSTER) {
+    my $eury = $CLUSTER_COUNT{$cluster}{"Euryarchaeota"} || 0;
+    my $cren = $CLUSTER_COUNT{$cluster}{"Crenarchaeota"} || 0;
+    my $type;
+    if ($eury and $cren) {
+	$type = "eury_cren";
+    } elsif ($eury) {
+	$type = "eury";
+    } elsif ($cren) {
+	$type = "cren";
+    } else {
+	$type = "others";
+    }
+
+    print join("\t", $cluster, $type, $eury, $cren), "\n";
+}

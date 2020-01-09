@@ -1,0 +1,87 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM [TAXID_LIST_FILE]
+";
+
+### Read ini file ###
+use FindBin;
+my $DOMNET_DIR = "$FindBin::Bin";
+if ($DOMNET_DIR =~ /^(.+)\/lib$/) {
+    $DOMNET_DIR = $1;
+} else {
+    die "ERROR: $DOMNET_DIR is not a correct dir for $PROGRAM";
+}
+
+require "$DOMNET_DIR/pm/DomNet.pm";
+
+my %VALUE = ();
+read_ini_file("$DOMNET_DIR/etc/domnet.ini", \%VALUE);
+my $ENDPOINT = $VALUE{endpoint};
+
+### Main ###
+my %OPT;
+getopts('', \%OPT);
+
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    my ($taxid) = split;
+
+    # my $lines = `spang nibb tax $taxid -a`;
+    my $lines = `spang $ENDPOINT taxid $taxid -a`;
+    my $out = parse_lines($lines);
+
+    print join("\t", $taxid, $out), "\n";
+}
+
+################################################################################
+### Functions ##################################################################
+################################################################################
+sub parse_lines {
+    my ($lines) = @_;
+
+    chomp($lines);
+    my @line = split("\n", $lines);
+
+    if (@line == 0) {
+	die;
+    }
+
+    my @name = ();
+    for my $line (@line) {
+	my @f = split("\t", $line);
+
+	# if ($f[0] =~ /^tax:(\d+)$/) {
+	if ($f[0] =~ /^taxid:(\d+)$/) {
+	} else {
+	    die;
+	}
+
+	my $name;
+	if ($f[1] =~ /^"(.+)"$/) {
+	    $name = $1;
+	} else {
+	    die;
+	}
+
+	if (defined $f[2]) {
+	    # if ($f[2] =~ /^up:(\w+)$/) {
+	    if ($f[2] =~ /^[a-z]+:(\w+)$/) {
+		my $rank = $1;
+		# $name .= "($rank)";
+		if ($rank =~ /^(Superkingdom|Phylum|Class|Order|Family|Genus|Species)$/) {
+		    push @name, $name;
+		}
+	    } else {
+		die;
+	    }
+	}
+	# push @name, $name;
+    }
+
+    return join("; ", @name);
+}
+

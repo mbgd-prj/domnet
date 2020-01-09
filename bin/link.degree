@@ -1,0 +1,31 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK | $PROGRAM
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+my %DEGREE = ();
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    chomp;
+    my ($link) = split("\t", $_);
+    my ($cluster1, $cluster2) = split("-", $link);
+
+    if ($cluster1 eq $cluster2) {
+	$DEGREE{$cluster1}++;
+    } else {
+	$DEGREE{$cluster1}++;
+	$DEGREE{$cluster2}++;
+    }
+}
+
+# for my $cluster (sort { $a <=> $b } keys %DEGREE) {
+for my $cluster (sort { $a cmp $b } keys %DEGREE) {
+    print $cluster, "\t", $DEGREE{$cluster}, "\n";
+}

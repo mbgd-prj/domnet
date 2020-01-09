@@ -1,0 +1,37 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+### Read ini file ###
+use FindBin;
+my $DOMNET_DIR = "$FindBin::Bin";
+if ($DOMNET_DIR =~ /^(.+)\/lib$/) {
+    $DOMNET_DIR = $1;
+} else {
+    die "ERROR: $DOMNET_DIR is not a correct dir for $PROGRAM";
+}
+
+require "$DOMNET_DIR/pm/DomNet.pm";
+
+my %VALUE = ();
+read_ini_file("$DOMNET_DIR/etc/domnet.ini", \%VALUE);
+my $ENDPOINT = $VALUE{endpoint};
+
+### Main ###
+my %OPT;
+getopts('', \%OPT);
+
+my @LINE = `cat | perl -pe 's/^/org:/' | spang $ENDPOINT -S 1 -P rdfs:label -as | perl -pe 's/^org://'`;
+
+for my $line (@LINE) {
+    if ($line =~ /^(\S+)\t"(.*)"$/) {
+	print "$1\t$2\n";
+    } else {
+	die;
+    }
+}

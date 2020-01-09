@@ -1,0 +1,60 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat FUNC_DEGREES | $PROGRAM
+-x: plot log(x)
+-y: plot log(y)
+";
+
+my %OPT;
+getopts('xy', \%OPT);
+
+my $OPTION = "";
+if ($OPT{x}) {
+    $OPTION .= " -x";
+}
+if ($OPT{y}) {
+    $OPTION .= " -y";
+}
+
+!@ARGV && -t and die $USAGE;
+my @ID = ();
+my @ALL = ();
+while (<>) {
+    chomp;
+    my ($func_cat_id, $func_cat_name, $degrees) = split("\t", $_);
+    if ($degrees) {
+	system "echo '$degrees' | perl -pe 's/,/\\n/g' | freq | plot_x_y.R $OPTION -X Degree -Y Frequency $func_cat_id $func_cat_name";
+	system "mv Rplots.pdf $func_cat_id.pdf";
+	system "mv Rplots.png $func_cat_id.png";
+	if ($func_cat_id =~ /^(\d+)\./) {
+	    my $i = $1;
+	    if ($ID[$i]) {
+		$ID[$i] .= " $func_cat_id.png";
+	    } else {
+		$ID[$i] = "$func_cat_id.png";
+	    }
+	}
+	push @ALL, $degrees;
+    }
+}
+
+my $ALL = join(",", @ALL);
+system "echo '$ALL' | perl -pe 's/,/\\n/g' | freq | plot_x_y.R $OPTION -X Degree -Y Frequency All";
+system "mv Rplots.pdf all.pdf";
+system "mv Rplots.png all.png";
+
+my @LIST = ();
+for (my $i=0; $i<@ID; $i++) {
+    if ($ID[$i]) {
+	system "convert +append $ID[$i] $i.png";
+	push @LIST, "$i.png";
+    }
+}
+
+system "convert +append o.png all.png o_all.png";
+
+system "convert -append @LIST o_all.png func_degrees.png";

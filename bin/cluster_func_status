@@ -1,0 +1,74 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM -o OUT_DIR [INPUT_FILE]
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('f:o:', \%OPT);
+
+my $OUT_DIR = $OPT{o} || die $USAGE;
+! -e $OUT_DIR and system "mkdir $OUT_DIR";
+
+my %N_CLUSTERS = ();
+my %N_DOMAINS_TOTAL = ();
+my %N_SP_TOTAL = ();
+my %N_DOMAIN_DUPLI_TOTAL = ();
+
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    chomp;
+    my @f = split("\t", $_, -1);
+    if (@f != 7) {
+    	die;
+    }
+
+    my ($cluster_id, $n_domains, $n_sp, $mbgd, $cog, $kegg, $tigr) = @f;
+
+    add_category("MBGD", $mbgd, $n_domains, $n_sp);
+    add_category("COG", $cog, $n_domains, $n_sp);
+    add_category("KEGG", $kegg, $n_domains, $n_sp);
+    add_category("TIGR", $tigr, $n_domains, $n_sp);
+}
+
+print_func_status("MBGD");
+print_func_status("COG");
+print_func_status("KEGG");
+print_func_status("TIGR");
+
+################################################################################
+### Function ###################################################################
+################################################################################
+sub add_category {
+    my ($db_name, $category_ids, $n_domains, $n_sp) = @_;
+
+    my @category_id = split(",", $category_ids);
+
+    for my $category_id (@category_id) {
+	$N_CLUSTERS{$db_name}{$category_id}++;
+	
+	$N_DOMAINS_TOTAL{$db_name}{$category_id} += $n_domains;
+	$N_SP_TOTAL{$db_name}{$category_id} += $n_sp;
+	
+	$N_DOMAIN_DUPLI_TOTAL{$db_name}{$category_id} += ($n_domains/$n_sp - 1);
+    }
+}
+
+sub print_func_status {
+    my ($db_name) = @_;
+
+    open(OUT, ">$OUT_DIR/$db_name") || die;
+    for my $category_id (sort keys %{$N_CLUSTERS{$db_name}}) {
+	my $n_clusters = $N_CLUSTERS{$db_name}{$category_id} || 0;
+	print OUT join("\t", $category_id, $n_clusters, 
+		       $N_DOMAINS_TOTAL{$db_name}{$category_id} / $n_clusters,
+		       $N_SP_TOTAL{$db_name}{$category_id} / $n_clusters,
+		       $N_DOMAIN_DUPLI_TOTAL{$db_name}{$category_id} / $n_clusters), "\n";
+    }
+    close(OUT);
+}

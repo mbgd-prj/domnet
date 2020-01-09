@@ -1,0 +1,62 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat CLUSTER_FILE | $PROGRAM TAXNAME
+";
+
+use DomRefine::Read;
+
+my %OPT;
+getopts('', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $TAXNAME_FILE = shift @ARGV;
+
+### Read taxon info
+my %TAXNAME = ();
+open(TAXNAME, "$TAXNAME_FILE") || die;
+while (<TAXNAME>) {
+    chomp;
+    my ($sp, $taxname) = split("\t", $_);
+    $TAXNAME{$sp} = $taxname;
+}
+close(TAXNAME);
+
+### Read input clusters
+my %CLUSTER = ();
+my %CLUSTER_COUNT = ();
+-t and die $USAGE;
+while (<STDIN>) {
+    my ($cluster, $gene, @domain_info) = decompose_dclst_line($_);
+    $CLUSTER{$cluster}++;
+    my ($sp, $name) = decompose_gene_id($gene);
+    if ($TAXNAME{$sp}) {
+	$CLUSTER_COUNT{$cluster}{$TAXNAME{$sp}}++;
+    }
+}
+
+### Output
+# for my $cluster (sort {$a <=> $b} keys %CLUSTER) {
+for my $cluster (sort {$a cmp $b} keys %CLUSTER) {
+    my $archaea = $CLUSTER_COUNT{$cluster}{"Archaea"} || 0;
+    my $bacteria = $CLUSTER_COUNT{$cluster}{"Bacteria"} || 0;
+    my $eukaryota = $CLUSTER_COUNT{$cluster}{"Eukaryota"} || 0;
+    my $type;
+    if (($archaea or $bacteria) and $eukaryota) {
+	$type = "prok_euk";
+    } elsif (($archaea or $bacteria) and ! $eukaryota) {
+	$type = "prok";
+    } elsif (! ($archaea or $bacteria) and $eukaryota) {
+	$type = "euk";
+    } else {
+	die;
+    }
+
+    print join("\t", $cluster, $type, $archaea, $bacteria, $eukaryota), "\n";
+}

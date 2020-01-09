@@ -1,0 +1,21 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM [OPTION]
+OPTION
+ -s: sort
+";
+
+my %OPT;
+getopts('s', \%OPT);
+
+-t and die $USAGE;
+
+if ($OPT{s}) {
+    system "cat | sort | uniq -c | sort -nr | freq_format";
+} else {
+    system "cat | sort | uniq -c | freq_format";
+}

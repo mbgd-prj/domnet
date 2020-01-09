@@ -1,0 +1,177 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK | $PROGRAM CLUSTER_DESCR
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+use DomRefine::Read;
+
+my %OPT;
+getopts('', \%OPT);
+
+### Read descriptions ###
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($DESCRIPTIONS) = @ARGV;
+
+my %DESCR = ();
+read_values($DESCRIPTIONS, \%DESCR);
+
+### Read descendents ###
+my %DESCENDENTS = ();
+read_descendents("additional_info/taxid_nodes/taxid_node.descendents", \%DESCENDENTS);
+
+### Read cluster members ###
+my %DOMAIN = ();
+my %CLUSTER_MEMBER = ();
+open(CLUSTER_MEMBER, "cluster") || die;
+parse_cluster_members(*CLUSTER_MEMBER, \%DOMAIN, \%CLUSTER_MEMBER);
+close(CLUSTER_MEMBER);
+
+### Adjacent ###
+my %ADJACENT = ();
+get_adjacent_domains(\%DOMAIN, \%ADJACENT);
+
+### Print ###
+!@ARGV && -t and die $USAGE;
+while (<STDIN>) {
+    chomp;
+    my @f = split("\t", $_);
+    my ($link, $taxon) = @f[0,4];
+
+    my @link = split("-", $link);
+    if (@link != 2) {
+	die;
+    }
+    my ($cluster1, $cluster2) = @link;
+
+    my $descr1 = $DESCR{$cluster1} || die;
+    my $descr2 = $DESCR{$cluster2} || die;
+
+    my @domain_fused = ();
+    my @domain1 = ();
+    my @domain2 = ();
+    for my $domain (keys %{$CLUSTER_MEMBER{$cluster1}}) {
+    	if ($ADJACENT{$cluster1}{$cluster2}{$domain}) {
+    	    push @domain_fused, $domain;
+    	} else {
+    	    push @domain1, $domain;
+    	}
+    }
+    for my $domain (keys %{$CLUSTER_MEMBER{$cluster2}}) {
+    	if ($ADJACENT{$cluster1}{$cluster2}{$domain}) {
+    	} else {
+    	    push @domain2, $domain;
+    	}
+    }
+
+    my ($count_fused, $count_fused_uniq) = count_orgs_in_taxon($taxon, @domain_fused);
+    my ($count1, $count1_uniq, $count_others1, $count_others_uniq1) = count_orgs_in_taxon($taxon, @domain1);
+    my ($count2, $count2_uniq, $count_others2, $count_others_uniq2) = count_orgs_in_taxon($taxon, @domain2);
+
+    print $_, "\t";
+    print_ratio($count1, $count1_uniq);
+    print " ";
+    print_ratio($count_others1, $count_others_uniq1);
+    print "\t";
+    print_ratio($count_fused, $count_fused_uniq);
+    print "\t";
+    print_ratio($count2, $count2_uniq);
+    print " ";
+    print_ratio($count_others2, $count_others_uniq2);
+    print "\t", $descr1, "\t", $descr2, "\n";
+}
+
+################################################################################
+### Functions ##################################################################
+################################################################################
+
+sub print_ratio {
+    my ($x, $y) = @_;
+    
+    # if ($y) {
+    # 	printf "$x($y):%.2f", $x/$y;
+    # } else {
+	# printf "$x($y)";
+    # }
+
+    printf "$y($x)";
+}
+
+sub get_adjacent_domains {
+    my ($h_domain, $r_adjacent) = @_;
+
+    for my $gene (keys %{$h_domain}) {
+	my ($org) = decompose_gene_id($gene);
+	my @domain = sort {$a<=>$b} keys %{${$h_domain}{$gene}};
+	for (my $i=1; $i<@domain; $i++) {
+	    if ($domain[$i-1] + 1 == $domain[$i]) {
+		my $cluster1 = ${$h_domain}{$gene}{$domain[$i-1]}{cluster};
+		my $cluster2 = ${$h_domain}{$gene}{$domain[$i]}{cluster};
+		${$r_adjacent}{$cluster1}{$cluster2}{"$gene($domain[$i-1])"} = $org;
+		${$r_adjacent}{$cluster1}{$cluster2}{"$gene($domain[$i])"} = $org;
+	    }
+	}
+    }
+}
+
+sub count_orgs {
+    my (@domain) = @_;
+
+    my $count = 0;
+    my %uniq = ();
+    for my $domain (@domain) {
+	if ($domain =~ /^(\S+)\(\d+\)$/) {
+	    my ($org) = decompose_gene_id($1);
+	    $count ++;
+	    $uniq{$org} = 1;
+	} else {
+	    die;
+	}
+    }
+
+    my $count_uniq = keys %uniq;
+
+    return ($count, $count_uniq);
+}
+
+sub count_orgs_in_taxon {
+    my ($taxon, @domain) = @_;
+    
+    my $taxid;
+    if ($taxon =~ /^taxid:(\d+)$/) {
+	$taxid = $1;
+    } else {
+	die;
+    }
+
+    my $count = 0;
+    my $count_others = 0;
+    my %uniq = ();
+    my %uniq_others = ();
+    for my $domain (@domain) {
+	if ($domain =~ /^(\S+)\(\d+\)$/) {
+	    my ($org) = decompose_gene_id($1);
+	    if ($DESCENDENTS{$taxid}{$org}) {
+		$count ++;
+		$uniq{$org} = 1;
+	    } else {
+		$count_others ++;
+		$uniq_others{$org} = 1;
+	    }
+	} else {
+	    die;
+	}
+    }
+
+    my $count_uniq = keys %uniq;
+    my $count_others_uniq = keys %uniq_others;
+
+    return ($count, $count_uniq, $count_others, $count_others_uniq);
+}

@@ -1,0 +1,318 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM CLUSTER.dclst
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+### Settings
+my @TAXON_RANK = ("Superkingdom", "Phylum", "Class", "Order", "Family", "Genus");
+my @FUNCTION_CATEGORY = ("MBGD", "COG", "KEGG", "TIGR");
+
+### Preparation
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $INPUT = shift @ARGV;
+if (! -e $INPUT) {
+    die;
+}
+
+my $CLUSTER = "cluster";
+if ($INPUT =~ /\.dclst$/) {
+    ! -s $CLUSTER and system "dclst2tsv $INPUT | dom_renumber -d | sort > $CLUSTER";
+    # some domain might be skipped -> so, re-number domains to be adjacent, and assing 0 for unsplit domains
+    # if (! -s $CLUSTER) {
+    # 	system "cat $INPUT | domrefine.dclst_to_files.pl";
+    # 	system "cat cluster | dom_renumber -d | sort > $CLUSTER";
+    # }
+} else {
+    system "ln -s $INPUT $CLUSTER";
+}
+
+### Basic information
+my $BASIC_INFO = "basic_info";
+! -e $BASIC_INFO and system "mkdir $BASIC_INFO";
+
+my $CLUSTER_DESCR = "$BASIC_INFO/cluster.descr";
+my $CLUSTER_SIZE = "$BASIC_INFO/cluster.size";
+my $CLUSTER_SP_NUM = "$BASIC_INFO/cluster.sp_num";
+my $CLUSTER_GENE_NUM = "$BASIC_INFO/cluster.gene_num";
+my $CLUSTER_PARALOG_NUM = "$BASIC_INFO/cluster.paralog_num";
+my $SP = "$BASIC_INFO/sp";
+my $GENE_NUM = "$BASIC_INFO/sp.gene_num";
+my $SP_SPLIT_GENE = "$BASIC_INFO/sp.split_gene_freq_ratio";
+my $DOMAIN_FREQ = "$BASIC_INFO/sp.domain_freq";
+my $DOMAIN_SPLIT_FREQ_RATIO = "$BASIC_INFO/sp.domain_split_freq_ratio";
+my $SP_CLUSTER_NUM = "$BASIC_INFO/sp.cluster_num";
+my $SP_PARALOG_FREQ = "$BASIC_INFO/sp.paralog_freq";
+my $SP_PARALOG_FREQ_RATIO = "$BASIC_INFO/sp.paralog_freq_ratio";
+my $SP_GENE_DUPLI_FREQ_RATIO = "$BASIC_INFO/sp.gene_dupli_freq_ratio";
+my $SP_DOMAIN_DUPLI_FREQ_RATIO = "$BASIC_INFO/sp.domain_dupli_freq_ratio";
+! -s $CLUSTER_DESCR and system "dclst2tsv -a $INPUT > $CLUSTER_DESCR";
+! -s $CLUSTER_SIZE and system "cat $CLUSTER | cut 1 | freq -s > $CLUSTER_SIZE";
+! -s $CLUSTER_SP_NUM and system "cat $CLUSTER | cut 1 : | sort | uniq | cut 1 | freq -s > $CLUSTER_SP_NUM";
+! -s $CLUSTER_GENE_NUM and system "cat $CLUSTER | cut 1,2 | sort | uniq | cut 1 | freq -s > $CLUSTER_GENE_NUM";
+! -s $CLUSTER_PARALOG_NUM and system "table_subtract $CLUSTER_SIZE $CLUSTER_SP_NUM > $CLUSTER_PARALOG_NUM";
+! -s $SP and system "cat $CLUSTER | cut 2 | cut 1 : | sort | uniq > $SP";
+! -s $GENE_NUM and system "cat $CLUSTER | cut 2 | sort | uniq | cut 1 : | freq > $GENE_NUM";
+! -s $SP_SPLIT_GENE and system "cat $CLUSTER | grep -v ' 0 ' | cut 2 | sort | uniq | cut 1 : | freq | freq2ratio -f -0 $GENE_NUM > $SP_SPLIT_GENE";
+! -s $DOMAIN_FREQ and system "cat $CLUSTER | cut 2 | cut 1 : | freq > $DOMAIN_FREQ";
+! -s $DOMAIN_SPLIT_FREQ_RATIO and system "cat $DOMAIN_FREQ | freq2ratio -f -1 $GENE_NUM > $DOMAIN_SPLIT_FREQ_RATIO";
+! -s $SP_CLUSTER_NUM and system "cat $CLUSTER | cut 1 : | sort | uniq | cut 2 | freq > $SP_CLUSTER_NUM";
+! -s $SP_PARALOG_FREQ and system "table_subtract $DOMAIN_FREQ $SP_CLUSTER_NUM > $SP_PARALOG_FREQ";
+! -s $SP_PARALOG_FREQ_RATIO and system "cat $SP_PARALOG_FREQ | freq2ratio -r -f $DOMAIN_FREQ > $SP_PARALOG_FREQ_RATIO";
+! -s $SP_GENE_DUPLI_FREQ_RATIO and system "cat $CLUSTER | cluster.duplicated_genes > $SP_GENE_DUPLI_FREQ_RATIO";
+! -s $SP_DOMAIN_DUPLI_FREQ_RATIO and system "cat $SP_PARALOG_FREQ | freq2ratio $SP_CLUSTER_NUM > $SP_DOMAIN_DUPLI_FREQ_RATIO";
+my $CLUSTER_FUNCTIONS = "$BASIC_INFO/cluster.functions";
+my $FUNC_STATUS_DIR = "$BASIC_INFO/func_status";
+my $SP_FUNCTIONS_FREQ = "$BASIC_INFO/sp.functions.freq";
+my $SP_FUNCTIONS_RATIO = "$BASIC_INFO/sp.functions.ratio";
+if ($INPUT =~ /\.dclst$/) {
+    ! -s $CLUSTER_FUNCTIONS and system "dclst2func $INPUT > $CLUSTER_FUNCTIONS";
+    (! -s "$FUNC_STATUS_DIR/MBGD" || ! -s "$FUNC_STATUS_DIR/COG" || ! -s "$FUNC_STATUS_DIR/KEGG" || ! -s "$FUNC_STATUS_DIR/TIGR") and 
+	system "table_summary $CLUSTER_SIZE $CLUSTER_SP_NUM $CLUSTER_FUNCTIONS | cluster_func_status -o $FUNC_STATUS_DIR";
+    ! -s $SP_FUNCTIONS_FREQ and system "cat cluster | cluster.func_freq $CLUSTER_FUNCTIONS > $SP_FUNCTIONS_FREQ";
+    ! -s $SP_FUNCTIONS_RATIO and system "cat cluster | cluster.func_freq -r $GENE_NUM $CLUSTER_FUNCTIONS > $SP_FUNCTIONS_RATIO";
+}
+
+### Additional  information
+my $ADDITIONAL_INFO = "additional_info";
+! -e $ADDITIONAL_INFO and system "mkdir $ADDITIONAL_INFO";
+
+my $SP_NAME = "$ADDITIONAL_INFO/sp.name";
+my $SP_TAXID = "$ADDITIONAL_INFO/sp.taxid";
+my $TAXID_ORDER = "$ADDITIONAL_INFO/taxid.order";
+my $SP_ORDER = "$ADDITIONAL_INFO/sp.order";
+my $SP_TAXID_ANCESTORS = "$ADDITIONAL_INFO/sp.taxid.ancestors";
+my $TAXID_NODE_DIR = "$ADDITIONAL_INFO/taxid_nodes";
+! -e $TAXID_NODE_DIR and system "mkdir $TAXID_NODE_DIR";
+my $TAXID_NODE_NAMES = "$TAXID_NODE_DIR/taxid_node.names";
+my $TAXID_NODE_ANCESTOR_NAMES = "$TAXID_NODE_DIR/taxid_node.ancestor_names";
+my $TAXID_NODE_PARENTS = "$TAXID_NODE_DIR/taxid_node.parents";
+my $TAXID_NODE_DESCENDENTS = "$TAXID_NODE_DIR/taxid_node.descendents";
+! -s $SP_NAME and system "cat $SP | org2descr > $SP_NAME";
+! -s $SP_TAXID and system "cat $SP | org2taxid > $SP_TAXID";
+! -s $TAXID_ORDER and system "cat /db/project/MBGD/etc/taxon.tab | cut -f1,7,8 | uniq > $TAXID_ORDER";
+! -s $SP_ORDER and system "cat $SP_TAXID | table -k 2 $TAXID_ORDER | sort -k4,4n | cut -f1,3 > $SP_ORDER";
+(! -s $TAXID_NODE_NAMES || ! -s $SP_TAXID_ANCESTORS) and system "cat $SP | org2taxid_ancestors -o $TAXID_NODE_NAMES > $SP_TAXID_ANCESTORS";
+# ! -s $TAXID_NODE_ANCESTOR_NAMES and system "cat $TAXID_NODE_NAMES | cut -f1 | tax2ancestor_names > $TAXID_NODE_ANCESTOR_NAMES"; # This fails, why ?
+! -s $TAXID_NODE_PARENTS and system "cat $TAXID_NODE_NAMES | cut -f1 | tax2parent > $TAXID_NODE_PARENTS";
+if (! -s $TAXID_NODE_DESCENDENTS) {
+    system "cat $SP_TAXID_ANCESTORS | taxid_ancestors2descendants > $TAXID_NODE_DESCENDENTS";
+}
+
+my $TAXON_DIR = "$ADDITIONAL_INFO/sp.taxon";
+! -e $TAXON_DIR and system "mkdir $TAXON_DIR";
+my @TAXON_NAME_FILE = ();
+for my $rank (@TAXON_RANK) {
+    my $taxon_name_file = "$TAXON_DIR/$rank";
+    ! -s $taxon_name_file and system "cat $SP | org2taxname $rank > $taxon_name_file";
+    push @TAXON_NAME_FILE, $taxon_name_file;
+}
+
+my $TAXON_SUMMARY = "$ADDITIONAL_INFO/sp.taxon_summary";
+if (! -s $TAXON_SUMMARY) {
+    my $taxname_sort_command = "sort";
+    for (my $i=2; $i<=7; $i++) {
+	$taxname_sort_command .= " -k$i,$i";
+    }
+    system "table_summary $SP @TAXON_NAME_FILE $SP_NAME | $taxname_sort_command > $TAXON_SUMMARY";
+}
+
+my $CLUSTER_PROK_EUK = "$ADDITIONAL_INFO/cluster.prok_euk";
+! -s $CLUSTER_PROK_EUK and system "cat $CLUSTER | cluster.prok_euk $TAXON_SUMMARY > $CLUSTER_PROK_EUK";
+
+if ($INPUT =~ /\.dclst$/) {
+    my $func_num_dir = "$ADDITIONAL_INFO/cluster_num.func_cat";
+    ! -e $func_num_dir and system "mkdir $func_num_dir";
+    ! (-s "$func_num_dir/MBGD" || -s "$func_num_dir/COG" || -s "$func_num_dir/KEGG" || -s "$func_num_dir/TIGR") and 
+	system "cat $CLUSTER_FUNCTIONS | cluster_num.func_cat -k $CLUSTER_PROK_EUK $func_num_dir";
+}
+
+### Domain fusion network
+
+# my $FILTER = "grep FUSION |";
+my $FILTER = "";
+
+my $NETWORK = "network";
+! -e $NETWORK and system "mkdir $NETWORK";
+
+my $LINK_ALL = "$NETWORK/link.all";
+my $LINK_ANCESTOR = "$NETWORK/link.ancestor";
+my $LINK_ANCESTOR_SIGNIFICANT = "$NETWORK/link.ancestor.significant";
+my $LINK_ANCESTOR_SIGNIFICANT_FREQ = "$NETWORK/link.ancestor.significant.freq";
+my $LINK_ANCESTOR_SIGNIFICANT_ANNOT = "$NETWORK/link.ancestor.significant.annot";
+my $LINK_ANCESTOR_SIGNIFICANT_ANNOT_FREQ = "$NETWORK/link.ancestor.significant.annot.freq";
+my $LINK_ALL_PROK_EUK = "$NETWORK/link.all.prok_euk";
+my $SP_FUSION_RATE = "$NETWORK/sp.fusion_rate";
+my $SP_FISSION_RATE = "$NETWORK/sp.fission_rate";
+my $TAXID_NODE_FUSION_RATE_MEAN = "$NETWORK/taxid_node.fusion_rate_mean";
+my $TAXID_NODE_FUSION_RATE_MEAN_SUMMARY = "$NETWORK/taxid_node.fusion_rate_mean.summary";
+my $TAXID_NODE_PARALOG_RATE_MEAN = "$NETWORK/taxid_node.paralog_rate_mean";
+my $TAXID_NODE_PARALOG_RATE_MEAN_SUMMARY = "$NETWORK/taxid_node.paralog_rate_mean.summary";
+my $TAXID_NODE_GENE_NUM_MEAN = "$NETWORK/taxid_node.gene_num_mean";
+my $TAXID_NODE_GENE_NUM_MEAN_SUMMARY = "$NETWORK/taxid_node.gene_num_mean.summary";
+my $TAXID_NODE_GENE_PARALOG_FUSION = "$NETWORK/taxid_node.gene_paralog_fusion";
+my $CLUSTER_DEGREE = "$NETWORK/cluster.degree";
+my $CLUSTER_DEGREE_FREQ = "$NETWORK/cluster.degree.freq";
+my $LINK_UNDER_DEGREE_TXT = "$NETWORK/link.degree6.txt";
+my $NODE_UNDER_DEGREE_TXT = "$NETWORK/node.degree6.txt";
+! -s $LINK_ALL and system "cat $CLUSTER | domnet_link_info -s $CLUSTER_SIZE -f $CLUSTER_FUNCTIONS -u -R > $LINK_ALL"; # IMPORTANT
+! -s $LINK_ANCESTOR and system "cat $LINK_ALL | link.ancestor > $LINK_ANCESTOR";
+! -s $LINK_ANCESTOR_SIGNIFICANT and system "cat $LINK_ANCESTOR | link.filter_by_coverage 0.5 | sort -t '\t' -k4,4 -k2,2gr -k6,6gr > $LINK_ANCESTOR_SIGNIFICANT";
+! -s $LINK_ANCESTOR_SIGNIFICANT_FREQ and system "cat $LINK_ANCESTOR_SIGNIFICANT | cut -f4,5 | freq -s > $LINK_ANCESTOR_SIGNIFICANT_FREQ";
+! -s $LINK_ANCESTOR_SIGNIFICANT_ANNOT and system "cat $LINK_ANCESTOR_SIGNIFICANT | link.annot $CLUSTER_DESCR > $LINK_ANCESTOR_SIGNIFICANT_ANNOT";
+! -s $LINK_ANCESTOR_SIGNIFICANT_ANNOT_FREQ and system "cat $LINK_ANCESTOR_SIGNIFICANT_ANNOT | link.annot.freq > $LINK_ANCESTOR_SIGNIFICANT_ANNOT_FREQ";
+! -s $LINK_ALL_PROK_EUK and system "cat $LINK_ALL | link.prok_euk $TAXON_DIR/Superkingdom > $LINK_ALL_PROK_EUK";
+! -s $SP_FUSION_RATE and system "cat $LINK_ALL | $FILTER cut -f5 | perl -pe 's/,/\\n/g' | freq | freq2ratio -f -0 $SP_CLUSTER_NUM > $SP_FUSION_RATE";
+! -s $SP_FISSION_RATE and system "cat $LINK_ALL | grep FISSION | cut -f6 | grep . | perl -pe 's/,/\\n/g' | freq | freq2ratio -f -0 $SP_CLUSTER_NUM > $SP_FISSION_RATE";
+! (-s "$NETWORK/link.prok" || -s "$NETWORK/link.euk" || -s "$NETWORK/link.prok_euk") and system "cluster_link_prok_euk -k $CLUSTER_PROK_EUK $NETWORK";
+! -s $TAXID_NODE_FUSION_RATE_MEAN and system "mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS -v 3 $SP_FUSION_RATE > $TAXID_NODE_FUSION_RATE_MEAN"; # IMPORTANT
+! -s $TAXID_NODE_FUSION_RATE_MEAN_SUMMARY and system "table_summary $TAXID_NODE_FUSION_RATE_MEAN $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS > $TAXID_NODE_FUSION_RATE_MEAN_SUMMARY";
+append_header($TAXID_NODE_FUSION_RATE_MEAN_SUMMARY, "${TAXID_NODE_FUSION_RATE_MEAN_SUMMARY}.txt", "taxid", "avg fusion_rate", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
+! -s $TAXID_NODE_PARALOG_RATE_MEAN and system "mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS -v 4 $SP_PARALOG_FREQ_RATIO > $TAXID_NODE_PARALOG_RATE_MEAN";
+! -s $TAXID_NODE_PARALOG_RATE_MEAN_SUMMARY and system "table_summary $TAXID_NODE_PARALOG_RATE_MEAN $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS > $TAXID_NODE_PARALOG_RATE_MEAN_SUMMARY";
+append_header($TAXID_NODE_PARALOG_RATE_MEAN_SUMMARY, "${TAXID_NODE_PARALOG_RATE_MEAN_SUMMARY}.txt", "taxid", "avg paralog_rate", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
+! -s $TAXID_NODE_GENE_NUM_MEAN and system "mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS $GENE_NUM > $TAXID_NODE_GENE_NUM_MEAN";
+! -s $TAXID_NODE_GENE_NUM_MEAN_SUMMARY and system "table_summary $TAXID_NODE_GENE_NUM_MEAN $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS > $TAXID_NODE_GENE_NUM_MEAN_SUMMARY";
+append_header($TAXID_NODE_GENE_NUM_MEAN_SUMMARY, "${TAXID_NODE_GENE_NUM_MEAN_SUMMARY}.txt", "taxid", "avg gene_num", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
+! -s $CLUSTER_DEGREE and system "cat $LINK_ALL | link.degree > $CLUSTER_DEGREE";
+! -s $CLUSTER_DEGREE_FREQ and system "cat $CLUSTER_DEGREE | cut 2 | freq | sort -k1,1n > $CLUSTER_DEGREE_FREQ";
+! -s $LINK_UNDER_DEGREE_TXT and system "cat $LINK_ALL | link.break_hubs -d 6 -t $TAXON_DIR/Superkingdom $CLUSTER_DEGREE > $LINK_UNDER_DEGREE_TXT";
+! -s $NODE_UNDER_DEGREE_TXT and system "cat $LINK_UNDER_DEGREE_TXT | network.node_attr -T -N $CLUSTER_SP_NUM -K $CLUSTER_PROK_EUK -F $CLUSTER_FUNCTIONS -D $CLUSTER_DESCR > $NODE_UNDER_DEGREE_TXT";
+
+! -s $TAXID_NODE_GENE_PARALOG_FUSION and system "paste $TAXID_NODE_GENE_NUM_MEAN $TAXID_NODE_PARALOG_RATE_MEAN $TAXID_NODE_FUSION_RATE_MEAN | cut -f1,4,10,16 > $TAXID_NODE_GENE_PARALOG_FUSION";
+
+if ($INPUT =~ /\.dclst$/) {
+    my $func_anal_dir = "$NETWORK/func_analysis";
+    ! -e $func_anal_dir and system "mkdir $func_anal_dir";
+    my $func_num_dir = "$ADDITIONAL_INFO/cluster_num.func_cat";
+    for my $cat (@FUNCTION_CATEGORY) {
+	fusion_func_anal($cat, "$NETWORK/link.all", "$FUNC_STATUS_DIR/$cat", "$func_num_dir/$cat", 2, $func_anal_dir, "link.all.$cat");
+	fusion_func_anal($cat, "$NETWORK/link.prok", "$FUNC_STATUS_DIR/$cat", "$func_num_dir/$cat", 3, $func_anal_dir, "link.prok.$cat");
+	fusion_func_anal($cat, "$NETWORK/link.euk", "$FUNC_STATUS_DIR/$cat", "$func_num_dir/$cat", 4, $func_anal_dir, "link.euk.$cat");
+	fusion_func_anal($cat, "$NETWORK/link.prok_euk", "$FUNC_STATUS_DIR/$cat", "$func_num_dir/$cat", 5, $func_anal_dir, "link.prok_euk.$cat");
+	! -s "$NETWORK/sp.same_func.$cat" and system "cat $LINK_ALL | $FILTER grep ${cat}_SAME_EXACTLY | cut -f5 | perl -pe 's/,/\\n/g' | freq | freq2ratio -0 $SP_FUSION_RATE > $NETWORK/sp.same_func.$cat";
+    }
+}
+
+### Summary
+my $SP_FUSION_SUMMARY = "sp.domfusion_summary";
+my @HEADER = ();
+my @COG_FUNCTIONS = ("COG1.1", "COG1.2", "COG1.3", "COG1.4", "COG1.5", "COG1.6", "COG1.7", "COG1.8", "COG2.1", "COG2.2", "COG2.3", "COG2.4", "COG2.5"
+		     , "COG3.1", "COG3.2", "COG3.3", "COG3.4", "COG3.5", "COG3.6", "COG3.7", "COG3.8", "COG3.9", "COG3.10", "COG3.11", "COG4.1", "COG4.2", "others");
+if (! -s $SP_FUSION_SUMMARY) {
+    @HEADER = ("sp", "hierarchy", @TAXON_RANK, "species", 
+	       "#genes", "#genes_split", "#genes_split/#genes", "#domains-#genes", "#domains/#genes-1", "#domains", "#paralogs", "#paralogs/#domains", 
+	       "#fusions", "#fusions/#clusters", "#fission", "#fission/#clusters", "#unduplicated_genes", "#duplicated_genes", "#duplicated/#genes", "#paralogs/#clusters"
+	       , @COG_FUNCTIONS, @COG_FUNCTIONS
+	);
+    my @files = ($SP_ORDER, $TAXON_SUMMARY, $GENE_NUM, $SP_SPLIT_GENE, $DOMAIN_SPLIT_FREQ_RATIO, $SP_PARALOG_FREQ_RATIO, $SP_FUSION_RATE, $SP_FISSION_RATE
+		 , $SP_GENE_DUPLI_FREQ_RATIO, $SP_DOMAIN_DUPLI_FREQ_RATIO
+		 , $SP_FUNCTIONS_FREQ, $SP_FUNCTIONS_RATIO
+	);
+    if ($INPUT =~ /\.dclst$/) {
+	push @HEADER, ("same MBGD fusion", "same COG fusion", "same KEGG fusion", "same TIGR fusion");
+	push @files, ("$NETWORK/sp.same_func.MBGD", "$NETWORK/sp.same_func.COG", "$NETWORK/sp.same_func.KEGG", "$NETWORK/sp.same_func.TIGR");
+    }
+    system "table_summary @files > $SP_FUSION_SUMMARY";
+}
+append_header($SP_FUSION_SUMMARY, "${SP_FUSION_SUMMARY}.txt", @HEADER);
+
+my $CLUSTER_SUMMARY = "$NETWORK/cluster.summary";
+! -s $CLUSTER_SUMMARY and system "table_summary -N 0 $CLUSTER_SIZE $CLUSTER_SP_NUM $CLUSTER_PARALOG_NUM $CLUSTER_DEGREE $CLUSTER_DESCR $CLUSTER_FUNCTIONS > $CLUSTER_SUMMARY";
+append_header($CLUSTER_SUMMARY, "${CLUSTER_SUMMARY}.txt", "cluster", "#domains", "#sp", "#paralogs", "degree", "description", "MBGD func", "COG func", "KEGG func", "TIGR func");
+
+my $CLUSTER_SUMMARY_COG_TXT = "$NETWORK/cluster.summary.COG.txt";
+! -s $CLUSTER_SUMMARY_COG_TXT and system "cat ${CLUSTER_SUMMARY}.txt | cut -f1-6,8 | perl -lane '\$F[4] and print' | table -k7 $NETWORK/func_analysis.txt/link.all.COG.txt > $CLUSTER_SUMMARY_COG_TXT";
+
+### Figures
+my $FIGURE_DIR = "figure";
+! -e $FIGURE_DIR and system "mkdir $FIGURE_DIR";
+chdir $FIGURE_DIR || die;
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 14 genes split";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 15 genes clusters";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 17 genes paralogs";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 19 genes fusions";
+system "domnet_plot_multi -p sp_multi ../$SP_FUSION_SUMMARY 10 19 genes fusions"; # important?
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 21 genes fissions";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 12 17 splitGenes paralogs";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 12 19 splitGenes fusions";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 14 17 splits paralogs";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 14 19 splits fusions";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 17 19 paralogs fusions"; # important?
+system "domnet_plot_multi -p sp_multi ../$SP_FUSION_SUMMARY 17 19 paralogs fusions"; # important?
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 21 fusions fissions";
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 24 fusions duplications"; # important?
+system "domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 25 fusions dupliDomains"; # important?
+
+system "domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 2 5 domains degree";
+system "domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 2 3 domains paralogs";
+system "domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 3 5 species degree";
+system "domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 4 5 paralogs degree";
+
+system "domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 2 3 genes paralogs";
+system "domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 2 4 genes fusions";
+system "domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 3 4 paralogs fusions";
+for my $cat (@FUNCTION_CATEGORY) {
+    system "domnet_plot -p $cat ../$NETWORK/func_analysis/link.all.$cat 4 5 domains species";
+    system "domnet_plot -p $cat ../$NETWORK/func_analysis/link.all.$cat 4 8 domains fusinos";
+    system "domnet_plot -p $cat ../$NETWORK/func_analysis/link.all.$cat 5 8 species fusinos";
+    system "domnet_plot -p $cat ../$NETWORK/func_analysis/link.all.$cat 6 8 paralogs fusions";
+}
+
+system "domnet_plot -l -xy ../$CLUSTER_DEGREE_FREQ 1 2 degree frequency";
+
+chdir "..";
+
+### Taxonomy tree figure
+my $TAXON_ANCESTORS_FIG = "domfusion_tax_tree.png";
+! -s $TAXON_ANCESTORS_FIG and system "cat $SP_FUSION_SUMMARY | cut -f1,19 | domfusion_tax_tree -t $SP_TAXID_ANCESTORS -n $TAXID_NODE_NAMES";
+
+################################################################################
+### Functions ##################################################################
+################################################################################
+sub fusion_func_anal {
+    my ($cat, $link_file, $func_status_file, $ref_file, $ref_col, $func_anal_dir, $out_file) = @_;
+
+    my $func_col;
+    if ($cat eq "MBGD") {
+	$func_col = 7;
+    } elsif ($cat eq "COG") {
+	$func_col = 9;
+    } elsif ($cat eq "KEGG") {
+	$func_col = 11;
+    } elsif ($cat eq "TIGR") {
+	$func_col = 13;
+    } else {
+	die;
+    }
+
+    ! -s "$func_anal_dir/out_file" and system "cat $link_file | $FILTER cut -f1,$func_col | fusion_func_anal -c $cat -p $func_status_file -r $ref_file -n $ref_col > $func_anal_dir/$out_file";
+    ! -e "$func_anal_dir.txt" and system "mkdir $func_anal_dir.txt";
+    if (! -s "${func_anal_dir}.txt/${out_file}.txt") {
+	my @header = ("$cat func", "description", "#clusters", 
+		      "#domains_avg", "#sp_avg", "#paralogs_avg",
+		      "#fusions", "average number of fusions",
+		      "#same_func", "ratio of same func", "#unknown_func", "ratio of unknown func", "#different_func", "ratio of different func", 
+		      "different func", "description", "#different_func", "ratio of different func");
+	append_header("$func_anal_dir/$out_file", "${func_anal_dir}.txt/${out_file}.txt", @header);
+    }
+}
+
+sub append_header {
+    my ($in_file, $out_file, @header) = @_;
+
+    if (! -s $out_file) {
+	my $header = join("\t", @header);
+	system "echo '$header' > $out_file";
+	system "cat $in_file >> $out_file";
+    }
+}

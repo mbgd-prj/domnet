@@ -1,0 +1,86 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat CLUSTER_FUNCTION | $PROGRAM -k CLUSTER_KINGDOM OUT_DIR
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+### Settings
+my @DB_NAME = ("MBGD", "COG", "KEGG", "TIGR");
+
+### Arguments
+my %OPT;
+getopts('f:k:d:', \%OPT);
+
+my $CLUSTER_KINGDOM = $OPT{k} || die $USAGE;
+
+-t and die $USAGE;
+!@ARGV and die $USAGE;
+my $OUT_DIR = $ARGV[0];
+
+### Read
+my %KINGDOM = ();
+read_values($CLUSTER_KINGDOM, \%KINGDOM);
+
+my %FREQ = ();
+while (<STDIN>) {
+    chomp;
+    my ($cluster, @f) = split("\t", $_, -1);
+    my $kingdom = $KINGDOM{$cluster};
+    for (my $i=0; $i<4; $i++) {
+	my $category_ids = $f[$i];
+	my @category_id = split(",", $category_ids);
+	for my $category_id (@category_id) {
+	    $FREQ{$DB_NAME[$i]}{$category_id}{total} ++;
+	    if (defined $kingdom) {
+		$FREQ{$DB_NAME[$i]}{$category_id}{$kingdom} ++;
+	    }
+	}
+    }
+}
+
+### Output
+for my $db_name ("MBGD", "COG", "KEGG", "TIGR") {
+    open(OUT, ">$OUT_DIR/$db_name") || die;
+    for my $func (sort keys %{$FREQ{$db_name}}) {
+	my $total = $FREQ{$db_name}{$func}{total} || 0;
+	my $prok = $FREQ{$db_name}{$func}{prok} || 0;
+	my $euk = $FREQ{$db_name}{$func}{euk} || 0;
+	my $prok_euk = $FREQ{$db_name}{$func}{prok_euk} || 0;
+	print OUT join("\t", $func, 
+		       $total, $prok, $euk, $prok_euk), "\n";
+    }
+    close(OUT);
+
+    my $db_name_lc = lc($db_name);
+    my $func_def_file = "/db/project/MBGD/database/function/$db_name_lc/function.$db_name_lc";
+    my %func_def = ();
+    my @func = ();
+    read_func_def($func_def_file, \%func_def, \@func);
+
+    open(TXT, ">$OUT_DIR/$db_name.txt") || die;
+    print TXT join("\t", "$db_name func", "description", 
+		   "#total_clusters", "#prok", "#euk", "#prok_euk", 
+		   "ratio of prok", "ratio of euk", "ratio of prok_euk"), "\n";
+    for my $func (@func) {
+	my $total = $FREQ{$db_name}{$func}{total} || 0;
+	my $prok = $FREQ{$db_name}{$func}{prok} || 0;
+	my $euk = $FREQ{$db_name}{$func}{euk} || 0;
+	my $prok_euk = $FREQ{$db_name}{$func}{prok_euk} || 0;
+	my ($prok_ratio, $euk_ratio, $prok_euk_ratio) = (0, 0, 0);
+	if ($total != 0) {
+	    $prok_ratio = $prok / $total;
+	    $euk_ratio = $euk / $total;
+	    $prok_euk_ratio = $prok_euk / $total;
+	}
+	print TXT join("\t", $func, $func_def{$func}, 
+		       $total, $prok, $euk, $prok_euk, 
+		       $prok_ratio, $euk_ratio, $prok_euk_ratio), "\n";
+    }
+    close(TXT)
+}
+

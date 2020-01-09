@@ -1,0 +1,100 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat cluster | $PROGRAM CLUSTER_FUNCTIONS
+-r REF_FREQ: reference frequency to calculate ratio
+-d: count domains
+-h: header
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+use DomRefine::Read;
+
+my %OPT;
+getopts('r:dh', \%OPT);
+
+my %REF_FREQ = ();
+if ($OPT{r}) {
+    read_values($OPT{r}, \%REF_FREQ);
+}
+
+### Read cluster functions ###
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($CLUSTER_FUNCTIONS) = @ARGV;
+
+my %FUNCTION = ();
+open(CLUSTER_FUNCTIONS, "$CLUSTER_FUNCTIONS") || die;
+while (<CLUSTER_FUNCTIONS>) {
+    chomp;
+    my @f = split("\t", $_, -1);
+    if (@f != 5) {
+	die;
+    }
+    my ($cluster, $cog) = @f[0,2];
+    if ($cog) {
+	$FUNCTION{$cluster} = $cog;
+	# print STDERR "$cluster $cog\n";
+    } else {
+	# print STDERR "$cluster\n";
+    }
+}
+close(CLUSTER_FUNCTIONS);
+
+### Read clusters members ###
+my %FUNC_FREQ = ();
+-t and die $USAGE;
+while (<STDIN>) {
+    chomp;
+    my ($cluster, $gene) = split;
+    my ($org) = decompose_gene_id($gene);
+    
+    my $func;
+    if (defined $FUNCTION{$cluster}) {
+	$func = $FUNCTION{$cluster};
+    } else {
+	$func = "others";
+    }
+
+    $FUNC_FREQ{$org}{$func}{$gene}++;
+}
+
+### Output ###
+my @FUNC_LIST = ("1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "2.1", "2.2", "2.3", "2.4", "2.5", 
+		 "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "4.1", "4.2", "others");
+
+if ($OPT{h}) {
+    print join("\t", "sp", @FUNC_LIST), "\n";
+}
+
+for my $org (sort keys %FUNC_FREQ) {
+    my @freq = ();
+    my $total_freq = 0;
+    for my $func (@FUNC_LIST) {
+	my @gene = keys %{$FUNC_FREQ{$org}{$func}};
+	my $freq = 0;
+	if ($OPT{d}) {
+	    for my $gene (@gene) {
+		$freq += $FUNC_FREQ{$org}{$func}{$gene};
+	    }
+	} else {
+	    $freq = @gene;
+	}
+	push @freq, $freq;
+    }
+
+    if ($OPT{r}) {
+	my @ratio = ();
+	for my $freq (@freq) {
+	    push @ratio, sprintf("%.5f", $freq/$REF_FREQ{$org});
+	}
+	print join("\t", $org, @ratio), "\n";
+    } else {
+	print join("\t", $org, @freq), "\n";
+    }
+}

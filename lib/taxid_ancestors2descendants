@@ -1,0 +1,31 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+my %DESCENDANT = ();
+
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    my ($organism, @taxon) = split;
+    for my $taxon (@taxon) {
+	if ($taxon =~ /^(\d+):\S+$/) {
+	    my $taxid = $1;
+	    $DESCENDANT{$taxid}{$organism} = 1;
+	} else {
+	    die $taxon;
+	}
+    }
+}
+
+for my $taxid (sort {$a <=> $b} keys %DESCENDANT) {
+    my @organism = sort keys %{$DESCENDANT{$taxid}};
+    print $taxid, "\t", join(",", @organism), "\n";
+}

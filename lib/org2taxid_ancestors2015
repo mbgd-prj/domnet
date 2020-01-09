@@ -1,0 +1,102 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM [SP_LIST_FILE]
+-o LIST: output list of taxon names
+";
+
+### Read ini file ###
+use FindBin;
+my $DOMNET_DIR = "$FindBin::Bin";
+if ($DOMNET_DIR =~ /^(.+)\/lib$/) {
+    $DOMNET_DIR = $1;
+} else {
+    die "ERROR: $DOMNET_DIR is not a correct dir for $PROGRAM";
+}
+
+require "$DOMNET_DIR/pm/DomNet.pm";
+
+my %VALUE = ();
+# read_ini_file("$DOMNET_DIR/etc/domnet.ini", \%VALUE);
+# my $ENDPOINT = $VALUE{endpoint};
+my $ENDPOINT = "nibbold";
+
+### Main ###
+my %OPT;
+getopts('o:', \%OPT);
+
+!@ARGV && -t and die $USAGE;
+my %TAX_NAME = ();
+my %TAX_ID = ();
+while (<>) {
+    my ($sp) = split;
+
+    my $lines = `spang $ENDPOINT mbgd/org $sp -a`;
+    my @tax_id = parse_lines($lines, \%TAX_NAME);
+
+    print join("\t", $sp, @tax_id), "\n";
+}
+
+if ($OPT{o}) {
+    my $organism_list_file = $OPT{o};
+    open(LIST, ">$organism_list_file") || die;
+    # for my $tax_id (sort {$a <=> $b} keys %TAX_NAME) {
+    # 	my $name = $TAX_NAME{$tax_id};
+    # 	print LIST "$tax_id\t$name\n";
+    # }
+    for my $tax_id (sort {$a <=> $b} keys %TAX_ID) {
+    	print LIST "$tax_id\n";
+    }
+    close(LIST);
+}
+
+################################################################################
+### Functions ##################################################################
+################################################################################
+sub parse_lines {
+    my ($lines, $r_tax_name) = @_;
+
+    chomp($lines);
+    my @line = split("\n", $lines);
+
+    if (@line == 0) {
+	die;
+    }
+
+    my @tax_id = ();
+    for my $line (@line) {
+	my @f = split("\t", $line);
+
+	my $tax_id;
+	if ($f[0] =~ /^[a-z]+:(\d+)$/) {
+	    $tax_id = $1;
+	    $TAX_ID{$tax_id} = 1;
+	} else {
+	    die;
+	}
+
+	my $name;
+	if ($f[1] =~ /^"(.+)"$/) {
+	    $name = $1;
+	    ${$r_tax_name}{$tax_id} = $name;
+	} else {
+	    die;
+	}
+
+	if (defined $f[2]) {
+	    if ($f[2] =~ /^[a-z]+:(\w+)$/) {
+		$tax_id .= ":$1";
+	    } else {
+		die;
+	    }
+	}
+
+	push @tax_id, $tax_id;
+    }
+
+    return @tax_id;
+}
+

@@ -1,0 +1,116 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM FILE COL1 COL2 COL_NAME1 COL_NAME2
+-p PREFIX
+-x: log scale
+-y: log scale
+-f: force create
+-l: linear regression
+";
+
+use DomRefine::Read;
+
+my $TMP_INPUT1 = define_tmp_file("$PROGRAM.input1");
+my $TMP_INPUT2 = define_tmp_file("$PROGRAM.input2");
+my $TMP_INPUT3 = define_tmp_file("$PROGRAM.input3");
+my $TMP_INPUT4 = define_tmp_file("$PROGRAM.input4");
+END {
+    remove_tmp_file($TMP_INPUT1);
+    remove_tmp_file($TMP_INPUT2);
+    remove_tmp_file($TMP_INPUT3);
+    remove_tmp_file($TMP_INPUT4);
+}
+
+my %OPT;
+getopts('p:xyfl', \%OPT);
+
+my $PREFIX = "";
+if ($OPT{p}) {
+    $PREFIX = $OPT{p} . ".";
+}
+
+my $OPTION = "";
+if ($OPT{x}) {
+    $OPTION .= " -x";
+}
+if ($OPT{y}) {
+    $OPTION .= " -y";
+}
+if ($OPT{l}) {
+    $OPTION .= " -l";
+}
+
+if (@ARGV != 5) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($file, $col1, $col2, $colname1, $colname2) = @ARGV;
+my $i_col1 = $col1 - 1;
+my $i_col2 = $col2 - 1;
+
+if (! $OPT{f} and -e "$PREFIX${colname1}_${colname2}.pdf") {
+    exit;
+}
+
+open(FILE, $file) || die;
+open(TMP_INPUT1, ">$TMP_INPUT1") || die;
+open(TMP_INPUT2, ">$TMP_INPUT2") || die;
+open(TMP_INPUT3, ">$TMP_INPUT3") || die;
+open(TMP_INPUT4, ">$TMP_INPUT4") || die;
+while (<FILE>) {
+    my @f = split("\t", $_);
+
+    # if ($f[4] eq "Methanomicrobia") {
+    if ($f[5] eq "Myxococcales") {
+    # if ($f[6] eq "Myxococcaceae") {
+    	print TMP_INPUT4 "$f[$i_col1]\t$f[$i_col2]\n";
+    # } elsif ($f[3] eq "Euryarchaeota") {
+    # } elsif ($f[4] eq "Deltaproteobacteria") {
+    # } elsif ($f[4] eq "Methanomicrobia") {
+    # } elsif ($f[4] eq "Thermoprotei") {
+    # } elsif ($f[5] eq "Thermoproteales") {
+    # } elsif ($f[5] eq "Sulfolobales") {
+    # } elsif ($f[6] eq "Pyrodictiaceae") {
+    # } elsif ($f[3] eq "Cyanobacteria") {
+    # 	print TMP_INPUT3 "$f[$i_col1]\t$f[$i_col2]\n";
+    # } elsif ($f[2] eq "Archaea") {
+    # } elsif ($f[3] eq "Crenarchaeota") {
+    # } elsif ($f[3] eq "Cyanobacteria") {
+    # } elsif ($f[5] eq "Oscillatoriales") {
+    # } elsif ($f[5] eq "Nostocales") {
+    # } elsif ($f[4] eq "Mollicutes") {
+    # } elsif ($f[4] eq "Methanopyri") {
+    # } elsif ($f[4] eq "Methanomicrobia") {
+    # } elsif ($f[5] eq "Rickettsiales") {
+    # } elsif ($f[6] eq "Rickettsiaceae") {
+    # } elsif ($f[4] eq "Flavobacteriia") {
+    # } elsif ($f[4] eq "Alphaproteobacteria") {
+    # } elsif ($f[3] eq "Tenericutes") {
+    # } elsif ($f[7] eq "Mycoplasma") {
+    # } elsif ($f[6] eq "Mycoplasmataceae") {
+    # } elsif ($f[5] eq "Mycoplasmatales") {
+    # } elsif ($f[5] eq "Enterobacteriales") {
+    # } elsif ($f[7] eq "Buchnera") {
+    # } elsif ($f[6] eq "Helicobacteraceae") {
+    # } elsif ($f[3] eq "Actinobacteria") {
+    # } elsif ($f[4] eq "Actinobacteria") {
+    # } elsif ($f[5] eq "Corynebacteriales") {
+    } elsif ($f[5] eq "Streptomycetales") {
+    	print TMP_INPUT2 "$f[$i_col1]\t$f[$i_col2]\n";
+    } else {
+    	print TMP_INPUT1 "$f[$i_col1]\t$f[$i_col2]\n";
+    }
+}
+close(FILE);
+close(TMP_INPUT1);
+close(TMP_INPUT2);
+close(TMP_INPUT3);
+close(TMP_INPUT4);
+
+system "~/etc/domnet/lib/domnet_plot_multi2.R $OPTION $TMP_INPUT1 $TMP_INPUT2 $TMP_INPUT4 $colname1 $colname2";
+system "mv Rplots.pdf $PREFIX${colname1}_${colname2}.pdf";
+system "mv Rplots.png $PREFIX${colname1}_${colname2}.png";

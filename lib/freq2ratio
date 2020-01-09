@@ -1,0 +1,71 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat FREQ | $PROGRAM REF_FREQ
+-r: output REF_FREQ
+-f: output FREQ
+-1: ratio - 1
+-0: ratio is 0 if freq not found
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('rf10', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($REF_FREQ_FILE) = @ARGV;
+
+my %REF_FREQ = ();
+read_values($REF_FREQ_FILE, \%REF_FREQ);
+
+-t and die $USAGE;
+my %FREQ = ();
+while (<STDIN>) {
+    chomp;
+    if (/^(\S+)\t(\d+)/) {
+	if (defined $FREQ{$1}) {
+	    die;
+	}
+	$FREQ{$1} = $2;
+    } else {
+	die;
+    }
+}
+
+# if (keys %REF_FREQ != keys %FREQ) {
+#     die;
+# }
+
+for my $org (sort keys %REF_FREQ) {
+    my $ref_freq = $REF_FREQ{$org};
+
+    my $freq;
+    if (defined $FREQ{$org}) {
+	$freq = $FREQ{$org};
+    } else {
+	if ($OPT{0}) {
+	    $freq = 0;
+	} else {
+	    die;
+	}
+    }
+    if ($OPT{1}) {
+	$freq = $freq - $ref_freq;
+    }
+
+    my @output = ();
+    if ($OPT{r}) {
+	push @output, $ref_freq;
+    }
+    if ($OPT{f}) {
+	push @output, $freq;
+    }
+    print join("\t", $org, @output, $freq/$ref_freq),"\n";
+}

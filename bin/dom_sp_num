@@ -1,0 +1,24 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+my %SP_NUM = ();
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    my ($cluster, $gene) = split;
+    my ($sp, $gene_id) = split(":", $gene);
+    
+    $SP_NUM{$sp}++;
+}
+
+for my $sp (sort keys %SP_NUM) {
+    print $sp, "\t", $SP_NUM{$sp}, "\n";
+}

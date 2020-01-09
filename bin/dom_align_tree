@@ -1,0 +1,400 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+use GD;
+use DomRefine::Draw;
+use DomRefine::General;
+use DomRefine::Read;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat SP_VALUES | $PROGRAM -t TAXID_ANCESTORS
+-n TAXON_NODE_NAMES
+";
+
+my %OPT;
+getopts('t:n:', \%OPT);
+
+-t and die $USAGE;
+
+### Read taxonomy ###
+my $TAXONOMY = $OPT{t} || die $USAGE;
+
+my %TAXONOMY = ();
+my ($ROOT, $COUNT) = read_taxonomy($TAXONOMY);
+
+my %TAXON_NAME = ();
+if ($OPT{n}) {
+    get_annotation($OPT{n}, \%TAXON_NAME);
+}
+
+### Read values ###
+my %VALUE = ();
+my $N_LINES = 0;
+while (<STDIN>) {
+    chomp;
+    my @f = split("\t", $_);
+    if (defined $f[1]) {
+	$VALUE{$f[0]} = $f[1];
+    }
+    $N_LINES ++;
+}
+my $MAX_VALUE = max(values %VALUE);
+
+### Create image ###
+# my $FONT = gdTinyFont;
+# my $FONT = gdSmallFont;
+my $FONT = gdMediumBoldFont;
+# my $FONT = gdLargeFont;
+# my $FONT = gdGiantFont;
+
+# my $CHAR_WIDTH = 5;
+my $CHAR_WIDTH = 7.5;
+
+# my $VERT_ADJUST = -4;
+my $VERT_ADJUST = -6;
+
+# my $UNIT_DEPTH = 100;
+# my $UNIT_DEPTH = 170;
+my $UNIT_DEPTH = 200;
+
+my $DEPTH_DIFF = 0.25;
+
+# my $LINE_PITCH = 10;
+my $LINE_PITCH = 19;
+
+my $BAR_WIDTH = 3;
+
+# my $VALUE_SCALE = 10;
+my $VALUE_SCALE = 1 / $MAX_VALUE;
+
+my $VERT_POS_OFFSET = 2;
+my $VERT_END_MARGIN = 3;
+my $DEPTH_OFFSET = 0.1;
+
+my %RANK = (
+    Superkingdom => 1,
+    Phylum => 2,
+    Class => 3,
+    Order => 4,
+    Family => 5,
+    Genus => 6,
+    Species => 7,
+    );
+
+my %DEPTH = ();
+get_adjusted_depths(\%DEPTH, \%RANK);
+
+my $FIG_WIDTH = $UNIT_DEPTH * (max(values %DEPTH) + 1 + $DEPTH_OFFSET * 2);
+# my $FIG_HEIGHT = $LINE_PITCH * ($N_LINES + $VERT_END_MARGIN);
+my $FIG_HEIGHT = $LINE_PITCH * ($COUNT + $VERT_END_MARGIN);
+
+my $IMAGE = new GD::Image($FIG_WIDTH, $FIG_HEIGHT);
+
+my %COLOR = ();
+create_colors(\$IMAGE, \%COLOR);
+
+for my $rank (keys %DEPTH) {
+    draw_string($DEPTH{$rank}, 0.6, "($rank)");
+}
+
+draw_tax_hierarchy($VERT_POS_OFFSET, $DEPTH_OFFSET, $ROOT);
+
+### Finish ###
+my $NAME = $PROGRAM;
+if (@ARGV) {
+    $NAME = "$ARGV[0].tax";
+}
+
+create_png(\$IMAGE, $NAME);
+
+################################################################################
+### Functions ##################################################################
+################################################################################
+sub get_adjusted_depths {
+    my ($h_depth, $h_rank) = @_;
+
+    my @depth = ();
+    trace_tax_hierarchy($h_rank, \@depth, $DEPTH_OFFSET, $ROOT);
+
+    my $max_j = max(values(%{$h_rank}));
+
+    my @max_depth = ();
+    for (my $j=1; $j<=$max_j; $j++) {
+	### Get the max depth of the level ###
+	for (my $i=0; $i<@depth; $i++) {
+	    if (defined $depth[$i][$j]) {
+		if (! defined $max_depth[$j]) {
+		    $max_depth[$j] = $depth[$i][$j];
+		} elsif ($depth[$i][$j] > $max_depth[$j]) {
+		    $max_depth[$j] = $depth[$i][$j];
+		}
+	    }
+	}
+	### Adjust depths for lower levels ###
+	for (my $j2=$j+1; $j2<=$max_j; $j2++) {
+	    for (my $i=0; $i<@depth; $i++) {
+		if (defined $depth[$i][$j] and defined $depth[$i][$j2]) {
+		    my $diff = $max_depth[$j] - $depth[$i][$j];
+		    $depth[$i][$j2] += $diff;
+		}
+	    }
+	}
+	### Adjust depths of the level ###
+	for (my $i=0; $i<@depth; $i++) {
+	    if (defined $depth[$i][$j]) {
+		$depth[$i][$j] = $max_depth[$j];
+	    }
+	}   
+    }
+
+    ### Save max depths ###
+    for my $key (keys %{$h_rank}) {
+	my $j = ${$h_rank}{$key};
+	${$h_depth}{$key} = $max_depth[$j];
+    }
+
+    ${$h_depth}{genome} = max(values %{$h_depth}) + 1.2;
+    ${$h_depth}{value} = max(values %{$h_depth}) + 0.5;
+}
+
+sub trace_tax_hierarchy {
+    my ($h_rank, $r_depth, $depth, $taxid, %depth) = @_;
+
+    if (! defined $TAXONOMY{$taxid}{child}) {
+	my @depth = ();
+	for my $rank (keys %depth) {
+	    my $j = ${$h_rank}{$rank};
+	    $depth[$j] = $depth{$rank};
+	}
+	push @{$r_depth}, \@depth;
+	return;
+    }
+
+    my @child_tax = sort {$a <=> $b} keys %{$TAXONOMY{$taxid}{child}};
+    if (@child_tax == 1 and ! defined ${$h_rank}{$TAXONOMY{$taxid}{rank}}) {
+	trace_tax_hierarchy($h_rank, $r_depth, $depth, $child_tax[0], %depth);
+    } elsif (! defined ${$h_rank}{$TAXONOMY{$taxid}{rank}}) {
+	for my $child_tax (@child_tax) {
+	    trace_tax_hierarchy($h_rank, $r_depth, $depth + $DEPTH_DIFF, $child_tax, %depth);
+	}
+    } else {
+	for my $child_tax (@child_tax) {
+	    trace_tax_hierarchy($h_rank, $r_depth, $depth + 1, $child_tax, %depth, $TAXONOMY{$taxid}{rank} => $depth);
+	}
+    }
+}
+
+sub draw_tax_hierarchy {
+    my ($next_line, $depth, $taxid) = @_;
+
+    ### Terminal ###
+    if (! defined $TAXONOMY{$taxid}{child}) {
+	my $genome = $TAXONOMY{$taxid}{genome} || die;
+	horizontal_line($next_line, $DEPTH{genome}, $DEPTH{genome}+0.1);
+	draw_value($DEPTH{value}, $next_line, $VALUE{$genome});
+	draw_label($DEPTH{genome}, $next_line, $genome);
+	if (defined $RANK{$TAXONOMY{$taxid}{rank}}) {
+	    my $corrected_depth = adjust_depth($taxid, $depth);
+	    horizontal_line($next_line, $corrected_depth, $DEPTH{genome});
+	    draw_label($corrected_depth, $next_line, $TAXON_NAME{$taxid});
+	    return ($next_line, $corrected_depth);
+	} else {
+	    return ($next_line, $DEPTH{genome});
+	}
+    }
+
+    ### Recursive ###
+    my @child_tax = sort {$a <=> $b} keys %{$TAXONOMY{$taxid}{child}};
+    if (defined $RANK{$TAXONOMY{$taxid}{rank}}) {
+	my $corrected_depth = adjust_depth($taxid, $depth);
+	my ($vert_pos, $child_depth) = draw_tax_children($next_line, $corrected_depth + 1, @child_tax);
+	horizontal_line($vert_pos, $corrected_depth, $child_depth);
+	draw_label($corrected_depth, $vert_pos, $TAXON_NAME{$taxid});
+	return ($vert_pos, $corrected_depth);
+    } elsif (@child_tax >= 2) {
+	my ($vert_pos, $child_depth) = draw_tax_children($next_line, $depth + $DEPTH_DIFF, @child_tax);
+	horizontal_line($vert_pos, $child_depth - $DEPTH_DIFF, $child_depth);
+	draw_label($child_depth - $DEPTH_DIFF, $vert_pos, $taxid);
+	return ($vert_pos, $child_depth - $DEPTH_DIFF);
+    } elsif (@child_tax == 1) {
+	return draw_tax_hierarchy($next_line, $depth, $child_tax[0]);
+    } else {
+	die;
+    }
+}
+
+sub draw_tax_children {
+    my ($next_line, $default_depth, @tax) = @_;;
+
+    my @vert_pos = ();
+    my @depth = ();
+    for my $tax (@tax) {
+	my ($vert_pos, $depth) = draw_tax_hierarchy($next_line, $default_depth, $tax);
+	push @vert_pos, $vert_pos;
+	push @depth, $depth;
+	$next_line += $TAXONOMY{$tax}{count};
+    }
+
+    # Minimum depth is unknown, untill all children are drawn.
+    my $min_depth = min(@depth);
+
+    # A vertical line at the minimum depth
+    my $vert_pos_center = vertical_line($min_depth, @vert_pos);
+
+    # Horizontal lines missing are complemented
+    for (my $i=0; $i<@tax; $i++) {
+	horizontal_line($vert_pos[$i], $min_depth, $depth[$i]);
+    }
+
+    return ($vert_pos_center, $min_depth);
+}
+
+sub adjust_depth {
+    my ($taxid, $depth) = @_;
+
+    if (defined $TAXONOMY{$taxid}{rank}) {
+	my $rank = $TAXONOMY{$taxid}{rank};
+	if (defined $DEPTH{$rank} and $depth < $DEPTH{$rank}) {
+	    return $DEPTH{$rank};
+	}
+    }
+
+    return $depth;
+}
+
+sub draw_label {
+    my ($horiz_pos, $vert_pos, $label) = @_;
+
+    $label = substr($label, 0, 23);
+
+    my $label_len = length($label) * $CHAR_WIDTH;
+
+    my $horiz_diff = 5;
+    my $len = min($label_len, $UNIT_DEPTH - $horiz_diff * 2);
+
+    $IMAGE->filledRectangle($horiz_pos * $UNIT_DEPTH + $horiz_diff,           $vert_pos * $LINE_PITCH - 4, 
+			    $horiz_pos * $UNIT_DEPTH + $horiz_diff + $len,    $vert_pos * $LINE_PITCH + 4, 
+			    $COLOR{WHITE});
+
+    return draw_string($horiz_pos, $vert_pos, $label);
+}
+
+### Read taxonomy ###
+sub read_taxonomy {
+    my ($file) = @_;
+
+    my %root = ();
+
+    open(TAXONOMY, $file) || die;
+    while (<TAXONOMY>) {
+	chomp;
+	my ($label, @x) = split("\t", $_);
+	if (@x == 0) {
+	    die;
+	}
+
+	my @taxid = ();
+	for (my $i=0; $i<@x; $i++) {
+	    if ($x[$i] =~ /^(\d+):(\w+)$/) {
+		my ($taxid, $rank) = ($1, $2);
+		push @taxid, $taxid;
+		$TAXONOMY{$taxid}{rank} = $rank;
+		if ($i == 0) {
+		    $root{$taxid}++;
+		}
+	    } else {
+		die;
+	    }
+	}
+
+	for (my $i=1; $i<@taxid; $i++) {
+	    $TAXONOMY{$taxid[$i-1]}{child}{$taxid[$i]}++;
+	}
+	$TAXONOMY{$taxid[-1]}{genome} = $label;
+    }
+    close(TAXONOMY);
+
+    my @root = keys %root;
+    if (@root != 1) {
+	die;
+    }
+    my $root = $root[0];
+
+    my $count = count_descendent($root);
+
+    return ($root, $count);
+}
+
+sub count_descendent {
+    my ($tax) = @_;
+
+    if (! defined $TAXONOMY{$tax}{child}) {
+	$TAXONOMY{$tax}{count} = 1;
+	return 1;
+    } 
+
+    my $count = 0;
+    for my $child (keys %{$TAXONOMY{$tax}{child}}) {
+	$count += count_descendent($child);
+    }
+
+    $TAXONOMY{$tax}{count} = $count;
+
+    return $count;
+}
+
+### Drawing elements ###
+sub draw_value {
+    my ($horiz_pos, $vert_pos, $value) = @_;
+
+    if (! defined $value) {
+	return;
+    }
+
+    my $lengh = $value * $VALUE_SCALE;
+
+    $IMAGE->filledRectangle($UNIT_DEPTH * $horiz_pos,            $LINE_PITCH * $vert_pos - $BAR_WIDTH, 
+			    $UNIT_DEPTH * ($horiz_pos + $lengh), $LINE_PITCH * $vert_pos + $BAR_WIDTH, 
+			    $COLOR{RED});
+}
+
+sub horizontal_line {
+    my ($vert_pos, $horiz_pos, $horiz_pos_end) = @_;
+    
+    # my $r = 5;
+    # $IMAGE->arc($horiz_pos * $UNIT_DEPTH, $vert_pos * $LINE_PITCH, $r, $r, 0, 360, $COLOR{GRAY});
+    # $IMAGE->fill($horiz_pos * $UNIT_DEPTH, $vert_pos * $LINE_PITCH, $COLOR{GRAY});
+
+    $IMAGE->line($UNIT_DEPTH * $horiz_pos,     $LINE_PITCH * $vert_pos,
+		 $UNIT_DEPTH * $horiz_pos_end, $LINE_PITCH * $vert_pos,
+		 $COLOR{GRAY});
+
+    return $vert_pos;
+}
+
+sub vertical_line {
+    my ($horiz_pos, @vert_pos) = @_;
+    
+    my $vert_pos_start = min(@vert_pos);
+    my $vert_pos_end = max(@vert_pos);
+
+    $IMAGE->line($UNIT_DEPTH * $horiz_pos, $LINE_PITCH * $vert_pos_start, 
+		 $UNIT_DEPTH * $horiz_pos, $LINE_PITCH * $vert_pos_end,
+		 $COLOR{GRAY});
+
+    return(($vert_pos_start + $vert_pos_end) / 2);
+}
+
+sub draw_string {
+    my ($horiz_pos, $vert_pos, $label) = @_;
+
+    my $horiz_diff = 8;
+
+    $IMAGE->string($FONT, 
+		   $horiz_pos * $UNIT_DEPTH + $horiz_diff,
+		   $vert_pos * $LINE_PITCH + $VERT_ADJUST,
+		   $label, $COLOR{BLACK});
+
+    return $vert_pos;
+}

@@ -1,0 +1,47 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK | $PROGRAM TAXID
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($TAXID) = shift @ARGV;
+
+my %DESCENDENTS = ();
+read_values("additional_info/taxid_nodes/taxid_node.descendents", \%DESCENDENTS);
+
+my %ORGS = ();
+if ($DESCENDENTS{$TAXID}) {
+    my @orgs = split(",", $DESCENDENTS{$TAXID});
+    for my $org (@orgs) {
+	$ORGS{$org} = 1;
+    }
+} else {
+    die;
+}
+
+!@ARGV && -t and die $USAGE;
+while (<>) {
+    chomp;
+    my @f = split("\t", $_);
+    my ($link, $orgs_fused) = @f[0,4];
+
+    my @orgs = split(",", $orgs_fused);
+    for my $org (@orgs) {
+	if ($ORGS{$org}) {
+	    print $_, "\n";
+	}
+    }
+}
+

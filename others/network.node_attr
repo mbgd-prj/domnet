@@ -1,0 +1,133 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK_INFO | $PROGRAM
+-T: cluster type
+-N CLUSTER_SP_NUM
+-K CLUSTER_PROK_EUK
+-F CLUSTER_FUNCTIONS
+-D CLUSTER_DESCR
+";
+# -l LENGTH
+
+my %OPT;
+getopts('TN:K:F:D:l:', \%OPT);
+
+### Read optional files
+my %SP_NUM = ();
+if ($OPT{N}) {
+    open(CLUSTER_SP_NUM, "$OPT{N}") || die $USAGE;
+    while (<CLUSTER_SP_NUM>) {
+	chomp;
+	my @f = split;
+	if (@f != 2) {
+	    die;
+	}
+	my $cluster = $f[0];
+	my $sp_num = $f[1];
+	$SP_NUM{$cluster} = $sp_num;
+    }
+    close(CLUSTER_SP_NUM);
+}
+
+my %PROK_EUK = ();
+if ($OPT{K}) {
+    open(CLUSTER_PROK_EUK, "$OPT{K}") || die $USAGE;
+    while (<CLUSTER_PROK_EUK>) {
+	chomp;
+	my ($cluster, $prok_euk) = split;
+	$PROK_EUK{$cluster} = $prok_euk;
+    }
+    close(CLUSTER_PROK_EUK);
+}
+
+my %FUNCTION = ();
+if ($OPT{F}) {
+    open(CLUSTER_FUNCTIONS, "$OPT{F}") || die;
+    while (<CLUSTER_FUNCTIONS>) {
+	chomp;
+	my @f = split("\t", $_, -1);
+	if (@f != 5) {
+	    die;
+	}
+	my $cluster = $f[0];
+	my $cog = $f[2];
+	$FUNCTION{$cluster} = $cog;
+    }
+    close(CLUSTER_FUNCTIONS);
+}
+
+my %DESCRIPTION = ();
+my %FULL_DESCR = ();
+my $LENGTH = $OPT{l} || 20;
+if ($OPT{D}) {
+    open(DESCRIPTION, "$OPT{D}") || die $USAGE;
+    while (<DESCRIPTION>) {
+	chomp;
+	my ($cluster, $description) = split("\t", $_);
+	# if (length($cluster) + length($description) + 2 > $LENGTH) {
+	#     $DESCRIPTION{$cluster} = "$cluster(" . substr($description, 0, $LENGTH - length($cluster) - 2 - 2) . "..)";
+	# } else {
+	#     $DESCRIPTION{$cluster}= "$cluster($description)";
+	# }
+	$FULL_DESCR{$cluster} = $description;
+	if (length($description) > $LENGTH) {
+	    # $DESCRIPTION{$cluster} = substr($description, 0, $LENGTH - 2) . "..";
+	    $DESCRIPTION{$cluster} = substr($description, 0, $LENGTH);
+	} else {
+	    $DESCRIPTION{$cluster}= $description;
+	}
+	if ($OPT{F}) {
+	    $DESCRIPTION{$cluster} = $FUNCTION{$cluster} . " " . $DESCRIPTION{$cluster};
+	}
+    }
+    close(DESCRIPTION);
+}
+
+### Read STDIN ###
+my %CLUSTER = ();
+-t and die $USAGE;
+while (<STDIN>) {
+    if (/^cluster/) {
+    	next;
+    }
+    my ($cluster1, $cluster2) = split;
+    $CLUSTER{$cluster1} = 1;
+    $CLUSTER{$cluster2} = 1;
+}
+
+### Output ###
+my @HEADER = ();
+@HEADER = "cluster";
+$OPT{T} and push @HEADER, "cluster_type";
+$OPT{N} and push @HEADER, "cluster_n_sp";
+$OPT{K} and push @HEADER, "cluster_prok_euk";
+$OPT{F} and push @HEADER, "func_cog";
+$OPT{D} and push @HEADER, "cluster_descr";
+$OPT{D} and push @HEADER, "cluster_full_descr";
+print join("\t", @HEADER), "\n";
+
+for my $cluster (sort keys %CLUSTER) {
+    my $cluster_id;
+    my $cluster_type;
+    if ($cluster =~ /^(\S+)\.\d+$/) {
+	$cluster_id = $1;
+	$cluster_type = "BREAK";
+    } elsif ($cluster =~ /^\S+$/) {
+	$cluster_id = $cluster;
+	$cluster_type = "CLUSTER";
+    } else {
+	die $cluster;
+    }
+    my @out = ($cluster);
+    $OPT{T} and push @out, $cluster_type;
+    $OPT{N} and push @out, $SP_NUM{$cluster_id};
+    $OPT{K} and push @out, $PROK_EUK{$cluster_id};
+    $OPT{F} and push @out, $FUNCTION{$cluster_id};
+    $OPT{D} and push @out, $DESCRIPTION{$cluster_id};
+    $OPT{D} and push @out, $FULL_DESCR{$cluster_id};
+    print join("\t", @out), "\n";
+}

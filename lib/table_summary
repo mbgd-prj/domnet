@@ -1,0 +1,61 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM KEY_FILE OTHER_FILES...
+-N NULL_STRING
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+
+### Arguments
+my %OPT;
+getopts('N:', \%OPT);
+
+my $NULL_STRING = "-";
+if (defined $OPT{N}) {
+    $NULL_STRING = $OPT{N};
+}
+
+if (@ARGV == 0) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($KEY_FILE, @OTHER_FILE) = @ARGV;
+
+### Read keys
+my @KEY = ();
+my @FIRST_VALUE = ();
+open(FILE, "$KEY_FILE") || die;
+while (<FILE>) {
+    chomp;
+    push @FIRST_VALUE, $_;
+    my ($key) = split("\t", $_);
+    push @KEY, $key;
+}
+close(FILE);
+
+### Read other values
+my @HASHES = ();
+for (my $j=0; $j<@OTHER_FILE; $j++) {
+    %{$HASHES[$j]} = ();
+    read_lines_to_hash($OTHER_FILE[$j], $HASHES[$j]);
+}
+
+### Print
+for (my $i=0; $i<@FIRST_VALUE; $i++) {
+    my @other_values = ();
+    for (my $j=0; $j<@OTHER_FILE; $j++) {
+	my $values;
+	if (defined ${$HASHES[$j]}{$KEY[$i]}) {
+	    $values = ${$HASHES[$j]}{$KEY[$i]};
+	} else {
+	    $values = $NULL_STRING;
+	}
+	push @other_values, $values;
+    }
+    print join("\t", $FIRST_VALUE[$i], @other_values), "\n";
+}

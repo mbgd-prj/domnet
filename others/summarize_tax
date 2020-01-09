@@ -1,0 +1,91 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat NAME_TAXID_NUM | $PROGRAM -a SP_ANCESTORS -n TAX_NAME
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('a:n:', \%OPT);
+
+my $SP_ANCESTORS = $OPT{a} || die $USAGE;
+my $TAX_NAME = $OPT{n} || die $USAGE;
+
+my %TAX_NAME = ();
+read_values($TAX_NAME, \%TAX_NAME);
+
+my %DESCENDANT = ();
+my %RANK = ();
+open(SP_ANCESTORS, $SP_ANCESTORS) || die;
+while (<SP_ANCESTORS>) {
+    chomp;
+    my ($sp, @taxon) = split;
+    if (@taxon == 0) {
+	die;
+    }
+    my @taxid = ();
+    for my $taxon (@taxon) {
+	if ($taxon =~ /^(\d+):(\w+)$/) {
+	    my ($taxid, $rank) = ($1, $2);
+	    push @taxid, $taxid;
+	    $RANK{$taxid} = $rank;
+	} else {
+	    die;
+	}
+    }
+    for (my $i=0; $i<@taxid; $i++) {
+	for (my $j=$i+1; $j<@taxid; $j++) {
+	    my $parent = $taxid[$i];
+	    my $descendant = $taxid[$j];
+	    $DESCENDANT{$parent}{$descendant} = 1;
+	}
+    }
+    
+}
+close(SP_ANCESTORS);
+
+-t and die $USAGE;
+my %NAME = ();
+my %NUM = ();
+while (<>) {
+    chomp;
+    my ($name, $taxon, $num) = split("\t", $_, -1);
+    if ($taxon =~ /^taxid:(\d+)$/) {
+	my $taxid = $1;
+	if ($DESCENDANT{$taxid}) {
+	    $NAME{$taxid} = $name;
+	    $NUM{$taxid} = $num;
+	} else {
+	    die;
+	}
+    } else {
+	die;
+    }
+}
+
+# for my $taxid (keys %NAME) {
+for my $taxid (keys %DESCENDANT) {
+    my @descendant = sort keys %{$DESCENDANT{$taxid}};
+    my $name = $TAX_NAME{$taxid};
+    my $sum = 0;
+    if ($NUM{$taxid}) {
+	$sum += $NUM{$taxid};
+    }
+    my @used = ();
+    for my $descendant (@descendant) {
+	if ($NUM{$descendant}) {
+	    $sum += $NUM{$descendant};
+	    push @used, $TAX_NAME{$descendant};
+	}
+    }
+    if ($RANK{$taxid}) {
+	$name .= " ($RANK{$taxid})";
+    }
+    # if ($sum) {
+	print "$name\ttaxid:$taxid\t$sum\t@used\n";
+    # }
+}

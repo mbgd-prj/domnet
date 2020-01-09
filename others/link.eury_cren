@@ -1,0 +1,37 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK_INFO | $PROGRAM TAX_NAME
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $TAX_NAME = shift @ARGV;
+
+### Read tax info ###
+my %TAX_NAME = ();
+read_values($TAX_NAME, \%TAX_NAME);
+
+### Read link ###
+-t and die $USAGE;
+while (<STDIN>) {
+    my @f = split;
+    my $link = $f[0];
+    my $organism_fused = $f[4];
+    my $organism_split = $f[5];
+
+    print $link, "\t";
+    print organisms_to_eury_cren($organism_fused, \%TAX_NAME), "\t";
+    print organisms_to_eury_cren($organism_split, \%TAX_NAME), "\t";
+    print join("\t", @f[1..$#f]), "\n";
+}

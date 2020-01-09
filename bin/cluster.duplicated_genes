@@ -1,0 +1,49 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+use DomRefine::Read;
+
+my %OPT;
+getopts('', \%OPT);
+
+!@ARGV && -t and die $USAGE;
+
+my %CLUSTER = ();
+my %GENE = ();
+while (<>) {
+    chomp;
+    my ($cluster, $gene_id, $domain, $begin, $end) = decompose_dclst_line($_);
+    my ($sp, $gene_name) = decompose_gene_id($gene_id);
+    
+    $GENE{$sp}{$gene_id} = 1;
+    $CLUSTER{$cluster}{$sp}{gene}{$gene_id} = 1;
+    $CLUSTER{$cluster}{$sp}{num}++;
+}
+
+my %DUPLICATED = ();
+for my $cluster (sort keys %CLUSTER) {
+    for my $sp (sort keys %{$CLUSTER{$cluster}}) {
+	if ($CLUSTER{$cluster}{$sp}{num} >= 2) {
+	    for my $gene (sort keys %{$CLUSTER{$cluster}{$sp}{gene}}) {
+		my ($sp, $gene_name) = decompose_gene_id($gene);
+		$DUPLICATED{$sp}{$gene} = 1;
+	    }
+	}
+    }
+}
+
+for my $sp (sort keys %GENE) {
+    my @gene = keys %{$GENE{$sp}};
+    my @duplicated_gene = keys %{$DUPLICATED{$sp}};
+    my $n_gene = @gene;
+    my $n_duplicated_gene = @duplicated_gene;
+    # print "$sp\t$n_gene\t", $n_gene - $n_duplicated_gene, "\t$n_duplicated_gene\t", $n_duplicated_gene/$n_gene, "\n";
+    print "$sp\t", $n_gene - $n_duplicated_gene, "\t$n_duplicated_gene\t", $n_duplicated_gene/$n_gene, "\n";
+    # print "$sp\t$n_duplicated_gene\t", $n_duplicated_gene/$n_gene, "\n";
+}

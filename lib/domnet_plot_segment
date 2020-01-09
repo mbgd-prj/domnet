@@ -1,0 +1,55 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+use DomRefine::Read;
+
+my $TMP_STDIN = define_tmp_file("$PROGRAM.stdin");
+my $TMP_POINTS1 = define_tmp_file("$PROGRAM.points1");
+my $TMP_SEGMENTS1 = define_tmp_file("$PROGRAM.segments1");
+END {
+    remove_tmp_file($TMP_STDIN);
+    remove_tmp_file($TMP_POINTS1);
+    remove_tmp_file($TMP_SEGMENTS1);
+}
+
+save_stdin($TMP_STDIN);
+
+open(TMP_STDIN, $TMP_STDIN) || die;
+open(TMP_POINTS1, ">$TMP_POINTS1") || die;
+open(TMP_SEGMENTS1, ">$TMP_SEGMENTS1") || die;
+while (<TMP_STDIN>) {
+    chomp;
+    my @f = split("\t", $_, -1);
+    my ($org, $x, $y) = @f;
+    my @x = ();
+    if ($x =~ /^(\d*\.?\d+) *- *(\d*\.?\d+)$/) {
+	# @x = ($1, $2);
+	$x[0] = ($1 + $2) / 2;
+	# print TMP_SEGMENTS1 "@x $y\n";
+    } elsif ($x =~ /^(\d+)$/) {
+	@x = ($1);
+    } elsif ($x =~ /^11\/01\/49$/) {
+	@x = (11, 49);
+    } else {
+	print "ERROR: $x\n";
+    }
+    if (@x == 2) {
+	# for (my $i=0; $i<@x; $i++) {
+	#     print TMP_POINTS1 "$x[$i]\t$y\n";
+	# }
+    } elsif (@x == 1) {
+	print TMP_POINTS1 "$x[0]\t$y\n";
+    }
+}
+close(TMP_STDIN);
+close(TMP_POINTS1);
+close(TMP_SEGMENTS1);
+
+# system "cat $TMP_POINTS1 | domnet_plot_segment.R -x temperature -y fusions -s $TMP_SEGMENTS1";
+system "cat $TMP_POINTS1 | domnet_plot_segment.R -x temperature -y fusions";

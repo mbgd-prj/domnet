@@ -1,0 +1,133 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK_INFO | $PROGRAM sp.taxon/
+";
+
+require "/home/chiba/etc/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my $SP_TAXON = shift @ARGV;
+
+### Read tax info ###
+my %SUPERKINGDOM = ();
+my %PHYLUM = ();
+my %CLASS = ();
+my %ORDER = ();
+my %FAMILY = ();
+my %GENUS = ();
+read_values("$SP_TAXON/Superkingdom", \%SUPERKINGDOM);
+read_values("$SP_TAXON/Phylum", \%PHYLUM);
+read_values("$SP_TAXON/Class", \%CLASS);
+read_values("$SP_TAXON/Order", \%ORDER);
+read_values("$SP_TAXON/Family", \%FAMILY);
+read_values("$SP_TAXON/Genus", \%GENUS);
+my %COUNT_TAXON = ();
+count_taxon(\%SUPERKINGDOM, \%COUNT_TAXON);
+count_taxon(\%PHYLUM, \%COUNT_TAXON);
+count_taxon(\%CLASS, \%COUNT_TAXON);
+count_taxon(\%ORDER, \%COUNT_TAXON);
+count_taxon(\%FAMILY, \%COUNT_TAXON);
+count_taxon(\%GENUS, \%COUNT_TAXON);
+
+### Read link ###
+-t and die $USAGE;
+while (<STDIN>) {
+    my @f = split;
+    my $link = $f[0];
+    my $organism_fused = $f[4];
+    my $organism_split = $f[5];
+    my $organisms = join(",", $organism_fused, $organism_split);
+
+    print $link, "\t";
+    if (map_to_taxa($organism_fused, $organism_split, \%GENUS)) {
+    } elsif (map_to_taxa($organism_fused, $organism_split, \%FAMILY)) {
+    } elsif (map_to_taxa($organism_fused, $organism_split, \%ORDER)) {
+    } elsif (map_to_taxa($organism_fused, $organism_split, \%CLASS)) {
+    } elsif (map_to_taxa($organism_fused, $organism_split, \%PHYLUM)) {
+    } elsif (map_to_taxa($organism_fused, $organism_split, \%SUPERKINGDOM)) {
+    }
+    if (map_to_taxon($organisms, \%GENUS) == 1) {
+    } elsif (map_to_taxon($organisms, \%FAMILY) == 1) {
+    } elsif (map_to_taxon($organisms, \%ORDER) == 1) {
+    } elsif (map_to_taxon($organisms, \%CLASS) == 1) {
+    } elsif (map_to_taxon($organisms, \%PHYLUM) == 1) {
+    } elsif (map_to_taxon($organisms, \%SUPERKINGDOM) == 1) {
+    } else {
+	print map_to_taxon($organisms, \%SUPERKINGDOM), "\t";
+    }
+    print $organism_fused, "\t";
+    print $organism_split, "\t";
+    print "\n";
+}
+
+################################################################################
+### Functions ##################################################################
+################################################################################
+sub map_to_taxon {
+    my ($organisms, $r_taxon_name) = @_;
+
+    my %count_taxon = ();
+    organisms_to_taxon($organisms, $r_taxon_name, \%count_taxon);
+    my @taxon = keys %count_taxon;
+
+    if (@taxon == 1) {
+	print "$taxon[0]:$count_taxon{$taxon[0]}/$COUNT_TAXON{$taxon[0]}\t";
+    }
+    return @taxon;
+}
+
+sub map_to_taxa {
+    my ($organism_fused, $organism_split, $r_taxon_name) = @_;
+
+    my $n_organism_fused = split(",", $organism_fused);
+
+    my %count_fused_taxon = ();
+    my %count_split_taxon = ();
+    organisms_to_taxon($organism_fused, $r_taxon_name, \%count_fused_taxon);
+    organisms_to_taxon($organism_split, $r_taxon_name, \%count_split_taxon);
+    my @fused_taxon = keys %count_fused_taxon;
+    my @split_taxon = keys %count_split_taxon;
+
+    if (@fused_taxon != 1) {
+	return 0;
+    }
+    # if ($count_split_taxon{$fused_taxon[0]}) {
+    # 	return 0;
+    # }
+    if ($count_fused_taxon{$fused_taxon[0]} == $n_organism_fused) {
+	if ($n_organism_fused/$COUNT_TAXON{$fused_taxon[0]}<=0.5) {
+	    return 0;
+	}
+	if ($n_organism_fused == 1) {
+	    return 0;
+	}
+	print "[$fused_taxon[0]:$n_organism_fused/$COUNT_TAXON{$fused_taxon[0]}]\t";
+	print "(";
+	for my $taxon (keys %count_split_taxon) {
+	    print "$taxon:$count_split_taxon{$taxon} ";
+	}
+	print ")\t";
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+sub count_taxon {
+    my ($r_taxon_name, $r_count_taxon) = @_;
+
+    for my $org (keys %{$r_taxon_name}) {
+	my $taxon = ${$r_taxon_name}{$org};
+	${$r_count_taxon}{$taxon} ++;
+    }
+}
