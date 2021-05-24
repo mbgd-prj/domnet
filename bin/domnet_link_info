@@ -12,7 +12,7 @@ determine fusion/fission/others, list of organisms linked
 -R: output repeat too
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 use DomRefine::General;
 use DomRefine::Read;
 use DomRefine::Refine;

@@ -11,7 +11,7 @@ my $USAGE=
 -T SIGNIFICANT_TAXON_INFO
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 
 my %OPT;
 getopts('n:d:t:T:', \%OPT);

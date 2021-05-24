@@ -1,4 +1,4 @@
-#!/home/chiba/etc/rscript/rscript
+#!/home/chiba/etc/hc-utils/rscript
 USAGE =
 "Usage: 
 -x: log scale

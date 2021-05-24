@@ -7,7 +7,7 @@ my $USAGE=
 "Usage: cat CLUSTER_FUNCTION | $PROGRAM -k CLUSTER_KINGDOM OUT_DIR
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 
 ### Settings
 my @DB_NAME = ("MBGD", "COG", "KEGG", "TIGR");

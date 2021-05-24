@@ -7,7 +7,7 @@ my $USAGE=
 "Usage: cat LINK | $PROGRAM CLUSTER_DESCR
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 use DomRefine::Read;
 
 my %OPT;

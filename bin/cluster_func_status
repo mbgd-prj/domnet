@@ -7,7 +7,7 @@ my $USAGE=
 "Usage: $PROGRAM -o OUT_DIR [INPUT_FILE]
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 
 my %OPT;
 getopts('f:o:', \%OPT);

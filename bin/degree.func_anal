@@ -7,7 +7,7 @@ my $USAGE=
 "Usage: cat CLUSTER_DEGREE | $PROGRAM CLUSTER_FUNCTIONS CATEGORY
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 
 my %OPT;
 getopts('f:', \%OPT);

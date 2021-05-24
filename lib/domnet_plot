@@ -41,6 +41,6 @@ if (! $OPT{f} and -e "$PREFIX${colname1}_${colname2}.pdf") {
     exit;
 }
 
-system "cat $file | cut -f $col1,$col2 | grep -v NA | grep -v Inf | ~/etc/domnet/lib/domnet_plot.R $OPTION $colname1 $colname2";
+system "cat $file | cut -f $col1,$col2 | grep -v NA | grep -v Inf | ~/github/hchiba1/domnet/lib/domnet_plot.R $OPTION $colname1 $colname2";
 system "mv Rplots.pdf $PREFIX${colname1}_${colname2}.pdf";
 system "mv Rplots.png $PREFIX${colname1}_${colname2}.png";

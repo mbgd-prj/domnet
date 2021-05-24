@@ -7,7 +7,7 @@ my $USAGE=
 "Usage: $PROGRAM KEY_VALUE1 KEY_VALUE2
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 
 ### Arguments
 my %OPT;

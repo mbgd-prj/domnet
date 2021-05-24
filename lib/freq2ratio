@@ -11,7 +11,7 @@ my $USAGE=
 -0: ratio is 0 if freq not found
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 
 my %OPT;
 getopts('rf10', \%OPT);

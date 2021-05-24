@@ -8,7 +8,7 @@ my $USAGE=
 -N NULL_STRING
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 
 
 ### Arguments

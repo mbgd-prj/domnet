@@ -111,6 +111,6 @@ close(TMP_INPUT2);
 close(TMP_INPUT3);
 close(TMP_INPUT4);
 
-system "~/etc/domnet/lib/domnet_plot_multi2.R $OPTION $TMP_INPUT1 $TMP_INPUT2 $TMP_INPUT4 $colname1 $colname2";
+system "~/github/hchiba1/domnet/lib/domnet_plot_multi2.R $OPTION $TMP_INPUT1 $TMP_INPUT2 $TMP_INPUT4 $colname1 $colname2";
 system "mv Rplots.pdf $PREFIX${colname1}_${colname2}.pdf";
 system "mv Rplots.png $PREFIX${colname1}_${colname2}.png";

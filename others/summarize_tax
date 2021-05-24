@@ -7,7 +7,7 @@ my $USAGE=
 "Usage: cat NAME_TAXID_NUM | $PROGRAM -a SP_ANCESTORS -n TAX_NAME
 ";
 
-require "/home/chiba/etc/domnet/pm/DomNet.pm";
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
 
 my %OPT;
 getopts('a:n:', \%OPT);

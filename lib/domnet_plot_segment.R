@@ -1,4 +1,4 @@
-#!/home/chiba/etc/rscript/rscript -g
+#!/home/chiba/etc/hc-utils/rscript -g
 USAGE =
 "Usage: 
 -h: help
