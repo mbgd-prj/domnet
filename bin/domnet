@@ -55,31 +55,31 @@ my $SP_PARALOG_FREQ = "$BASIC_INFO/sp.paralog_freq";
 my $SP_PARALOG_FREQ_RATIO = "$BASIC_INFO/sp.paralog_freq_ratio";
 my $SP_GENE_DUPLI_FREQ_RATIO = "$BASIC_INFO/sp.gene_dupli_freq_ratio";
 my $SP_DOMAIN_DUPLI_FREQ_RATIO = "$BASIC_INFO/sp.domain_dupli_freq_ratio";
-! -s $CLUSTER_DESCR and system "dclst2tsv -a $INPUT > $CLUSTER_DESCR";
-! -s $CLUSTER_SIZE and system "cat $CLUSTER | cut 1 | freq -s > $CLUSTER_SIZE";
-! -s $CLUSTER_SP_NUM and system "cat $CLUSTER | cut 1 : | sort | uniq | cut 1 | freq -s > $CLUSTER_SP_NUM";
-! -s $CLUSTER_GENE_NUM and system "cat $CLUSTER | cut 1,2 | sort | uniq | cut 1 | freq -s > $CLUSTER_GENE_NUM";
-! -s $CLUSTER_PARALOG_NUM and system "table_subtract $CLUSTER_SIZE $CLUSTER_SP_NUM > $CLUSTER_PARALOG_NUM";
-! -s $SP and system "cat $CLUSTER | cut 2 | cut 1 : | sort | uniq > $SP";
-! -s $GENE_NUM and system "cat $CLUSTER | cut 2 | sort | uniq | cut 1 : | freq > $GENE_NUM";
-! -s $SP_SPLIT_GENE and system "cat $CLUSTER | grep -v ' 0 ' | cut 2 | sort | uniq | cut 1 : | freq | freq2ratio -f -0 $GENE_NUM > $SP_SPLIT_GENE";
-! -s $DOMAIN_FREQ and system "cat $CLUSTER | cut 2 | cut 1 : | freq > $DOMAIN_FREQ";
-! -s $DOMAIN_SPLIT_FREQ_RATIO and system "cat $DOMAIN_FREQ | freq2ratio -f -1 $GENE_NUM > $DOMAIN_SPLIT_FREQ_RATIO";
-! -s $SP_CLUSTER_NUM and system "cat $CLUSTER | cut 1 : | sort | uniq | cut 2 | freq > $SP_CLUSTER_NUM";
-! -s $SP_PARALOG_FREQ and system "table_subtract $DOMAIN_FREQ $SP_CLUSTER_NUM > $SP_PARALOG_FREQ";
-! -s $SP_PARALOG_FREQ_RATIO and system "cat $SP_PARALOG_FREQ | freq2ratio -r -f $DOMAIN_FREQ > $SP_PARALOG_FREQ_RATIO";
-! -s $SP_GENE_DUPLI_FREQ_RATIO and system "cat $CLUSTER | cluster.duplicated_genes > $SP_GENE_DUPLI_FREQ_RATIO";
-! -s $SP_DOMAIN_DUPLI_FREQ_RATIO and system "cat $SP_PARALOG_FREQ | freq2ratio $SP_CLUSTER_NUM > $SP_DOMAIN_DUPLI_FREQ_RATIO";
+assert("dclst2tsv -a $INPUT", $CLUSTER_DESCR);
+assert("cat $CLUSTER | cut 1 | freq -s", $CLUSTER_SIZE);
+assert("cat $CLUSTER | cut 1 : | sort | uniq | cut 1 | freq -s", $CLUSTER_SP_NUM);
+assert("cat $CLUSTER | cut 1,2 | sort | uniq | cut 1 | freq -s", $CLUSTER_GENE_NUM);
+assert("table_subtract $CLUSTER_SIZE $CLUSTER_SP_NUM", $CLUSTER_PARALOG_NUM);
+assert("cat $CLUSTER | cut 2 | cut 1 : | sort | uniq", $SP);
+assert("cat $CLUSTER | cut 2 | sort | uniq | cut 1 : | freq", $GENE_NUM);
+assert("cat $CLUSTER | grep -v ' 0 ' | cut 2 | sort | uniq | cut 1 : | freq | freq2ratio -f -0 $GENE_NUM", $SP_SPLIT_GENE);
+assert("cat $CLUSTER | cut 2 | cut 1 : | freq", $DOMAIN_FREQ);
+assert("cat $DOMAIN_FREQ | freq2ratio -f -1 $GENE_NUM", $DOMAIN_SPLIT_FREQ_RATIO);
+assert("cat $CLUSTER | cut 1 : | sort | uniq | cut 2 | freq", $SP_CLUSTER_NUM);
+assert("table_subtract $DOMAIN_FREQ $SP_CLUSTER_NUM", $SP_PARALOG_FREQ);
+assert("cat $SP_PARALOG_FREQ | freq2ratio -r -f $DOMAIN_FREQ", $SP_PARALOG_FREQ_RATIO);
+assert("cat $CLUSTER | cluster.duplicated_genes", $SP_GENE_DUPLI_FREQ_RATIO);
+assert("cat $SP_PARALOG_FREQ | freq2ratio $SP_CLUSTER_NUM", $SP_DOMAIN_DUPLI_FREQ_RATIO);
 my $CLUSTER_FUNCTIONS = "$BASIC_INFO/cluster.functions";
 my $FUNC_STATUS_DIR = "$BASIC_INFO/func_status";
 my $SP_FUNCTIONS_FREQ = "$BASIC_INFO/sp.functions.freq";
 my $SP_FUNCTIONS_RATIO = "$BASIC_INFO/sp.functions.ratio";
 if ($INPUT =~ /\.dclst$/) {
-    ! -s $CLUSTER_FUNCTIONS and system "dclst2func $INPUT > $CLUSTER_FUNCTIONS";
+    assert("dclst2func $INPUT", $CLUSTER_FUNCTIONS);
     (! -s "$FUNC_STATUS_DIR/MBGD" || ! -s "$FUNC_STATUS_DIR/COG" || ! -s "$FUNC_STATUS_DIR/KEGG" || ! -s "$FUNC_STATUS_DIR/TIGR") and 
-	system "table_summary $CLUSTER_SIZE $CLUSTER_SP_NUM $CLUSTER_FUNCTIONS | cluster_func_status -o $FUNC_STATUS_DIR";
-    ! -s $SP_FUNCTIONS_FREQ and system "cat cluster | cluster.func_freq $CLUSTER_FUNCTIONS > $SP_FUNCTIONS_FREQ";
-    ! -s $SP_FUNCTIONS_RATIO and system "cat cluster | cluster.func_freq -r $GENE_NUM $CLUSTER_FUNCTIONS > $SP_FUNCTIONS_RATIO";
+        system "table_summary $CLUSTER_SIZE $CLUSTER_SP_NUM $CLUSTER_FUNCTIONS | cluster_func_status -o $FUNC_STATUS_DIR";
+    assert("cat cluster | cluster.func_freq $CLUSTER_FUNCTIONS", $SP_FUNCTIONS_FREQ);
+    assert("cat cluster | cluster.func_freq -r $GENE_NUM $CLUSTER_FUNCTIONS", $SP_FUNCTIONS_RATIO);
 }
 
 ### Additional  information
@@ -97,31 +97,28 @@ my $TAXID_NODE_NAMES = "$TAXID_NODE_DIR/taxid_node.names";
 my $TAXID_NODE_ANCESTOR_NAMES = "$TAXID_NODE_DIR/taxid_node.ancestor_names";
 my $TAXID_NODE_PARENTS = "$TAXID_NODE_DIR/taxid_node.parents";
 my $TAXID_NODE_DESCENDENTS = "$TAXID_NODE_DIR/taxid_node.descendents";
-! -s $SP_NAME and system "cat $SP | org2descr > $SP_NAME";
-! -s $SP_TAXID and system "cat $SP | org2taxid > $SP_TAXID";
-! -s $TAXID_ORDER and system "cat /db/project/MBGD/etc/taxon.tab | cut -f1,7,8 | uniq > $TAXID_ORDER";
-! -s $SP_ORDER and system "cat $SP_TAXID | table -k 2 $TAXID_ORDER | sort -k4,4n | cut -f1,3 > $SP_ORDER";
+assert("cat $SP | org2descr", $SP_NAME);
+assert("cat $SP | org2taxid", $SP_TAXID);
+assert("cat /db/project/MBGD/etc/taxon.tab | cut -f1,7,8 | uniq", $TAXID_ORDER);
+assert("cat $SP_TAXID | table -k 2 $TAXID_ORDER | sort -k4,4n | cut -f1,3", $SP_ORDER);
 (! -s $TAXID_NODE_NAMES || ! -s $SP_TAXID_ANCESTORS) and system "cat $SP | org2taxid_ancestors -o $TAXID_NODE_NAMES > $SP_TAXID_ANCESTORS";
-# ! -s $TAXID_NODE_ANCESTOR_NAMES and system "cat $TAXID_NODE_NAMES | cut -f1 | tax2ancestor_names > $TAXID_NODE_ANCESTOR_NAMES"; # This fails, why ?
-! -s $TAXID_NODE_PARENTS and system "cat $TAXID_NODE_NAMES | cut -f1 | tax2parent > $TAXID_NODE_PARENTS";
-if (! -s $TAXID_NODE_DESCENDENTS) {
-    system "cat $SP_TAXID_ANCESTORS | taxid_ancestors2descendants > $TAXID_NODE_DESCENDENTS";
-}
+# assert("cat $TAXID_NODE_NAMES | cut -f1 | tax2ancestor_names", $TAXID_NODE_ANCESTOR_NAMES); # This fails, why ?
+assert("cat $TAXID_NODE_NAMES | cut -f1 | tax2parent", $TAXID_NODE_PARENTS);
+assert("cat $SP_TAXID_ANCESTORS | taxid_ancestors2descendants", $TAXID_NODE_DESCENDENTS);
 
 my $TAXON_DIR = "$ADDITIONAL_INFO/sp.taxon";
 ! -e $TAXON_DIR and system "mkdir $TAXON_DIR";
 my @TAXON_NAME_FILE = ();
 for my $rank (@TAXON_RANK) {
-    my $taxon_name_file = "$TAXON_DIR/$rank";
-    ! -s $taxon_name_file and system "cat $SP | org2taxname $rank > $taxon_name_file";
-    push @TAXON_NAME_FILE, $taxon_name_file;
+    assert("cat $SP | org2taxname $rank", "$TAXON_DIR/$rank");
+    push @TAXON_NAME_FILE, "$TAXON_DIR/$rank";
 }
 
 my $TAXON_SUMMARY = "$ADDITIONAL_INFO/sp.taxon_summary";
 if (! -s $TAXON_SUMMARY) {
     my $taxname_sort_command = "sort";
     for (my $i=2; $i<=7; $i++) {
-	$taxname_sort_command .= " -k$i,$i";
+        $taxname_sort_command .= " -k$i,$i";
     }
     system "table_summary $SP @TAXON_NAME_FILE $SP_NAME | $taxname_sort_command > $TAXON_SUMMARY";
 }
@@ -133,7 +130,7 @@ if ($INPUT =~ /\.dclst$/) {
     my $func_num_dir = "$ADDITIONAL_INFO/cluster_num.func_cat";
     ! -e $func_num_dir and system "mkdir $func_num_dir";
     ! (-s "$func_num_dir/MBGD" || -s "$func_num_dir/COG" || -s "$func_num_dir/KEGG" || -s "$func_num_dir/TIGR") and 
-	system "cat $CLUSTER_FUNCTIONS | cluster_num.func_cat -k $CLUSTER_PROK_EUK $func_num_dir";
+        system "cat $CLUSTER_FUNCTIONS | cluster_num.func_cat -k $CLUSTER_PROK_EUK $func_num_dir";
 }
 
 ### Domain fusion network
@@ -314,5 +311,13 @@ sub append_header {
 	my $header = join("\t", @header);
 	system "echo '$header' > $out_file";
 	system "cat $in_file >> $out_file";
+    }
+}
+
+sub assert {
+    my ($command, $out_file) = @_;
+
+    if (!-s $out_file) {
+        system "$command > $out_file";
     }
 }
