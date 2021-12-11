@@ -14,8 +14,9 @@ if (opt.h) {
 }
 ##################################
 
-library(RColorBrewer)
-cols <- brewer.pal(8,"Set1")
+# library(RColorBrewer)
+# cols <- brewer.pal(8,"Set1")
+cols = c('red', 'blue', 'green')
 
 input1 = read.table(ARGV[1])
 input2 = read.table(ARGV[2])
