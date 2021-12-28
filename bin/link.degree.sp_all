@@ -1,0 +1,74 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+# use IO::Handle;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK | $PROGRAM cluster_sp
+";
+
+my %OPT;
+getopts('m', \%OPT);
+
+if (@ARGV != 1) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my ($CLUSTER_SP) = @ARGV;
+
+-t and die $USAGE;
+my @LINK = ();
+while (<STDIN>) {
+    chomp;
+    my ($link) = split("\t", $_);
+    push @LINK, $link;
+}
+
+my %ALL_SP = ();
+my %INCLUDES = ();
+open(CLUSTER_SP, "$CLUSTER_SP") || die;
+while (<CLUSTER_SP>) {
+    chomp;
+    my @f = split;
+    if (@f != 2) {
+        die;
+    }
+    my ($cluster, $sp) = @f;
+    $ALL_SP{$sp} = 1;
+    $INCLUDES{$sp}{$cluster} = 1;
+}
+close(CLUSTER_SP);
+
+STDOUT->autoflush;
+for my $sp (sort {$a cmp $b} keys(%ALL_SP)) {
+    calc_mean_degree($sp);
+}
+
+################################################################################
+### Function ###################################################################
+################################################################################
+sub calc_mean_degree {
+    my ($sp) = @_;
+
+    my %degree = ();
+    for my $link (@LINK) {
+        my ($cluster1, $cluster2) = split("-", $link);
+        if ($INCLUDES{$sp}{$cluster1} && $INCLUDES{$sp}{$cluster2}) {
+            if ($cluster1 eq $cluster2) {
+                $degree{$cluster1}++;
+            } else {
+                $degree{$cluster1}++;
+                $degree{$cluster2}++;
+            }
+        }
+    }
+
+    my $sum = 0;
+    my $count = 0;
+    for my $cluster (keys %degree) {
+        $sum += $degree{$cluster};
+        $count ++;
+    }
+    print $sp, "\t", $count, "\t", $sum/$count, "\n";
+}
