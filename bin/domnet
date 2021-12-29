@@ -47,6 +47,7 @@ mkdir_with_check($BASIC_INFO);
 
 my $CLUSTER_DESCR = "$BASIC_INFO/cluster.descr";
 my $CLUSTER_SIZE = "$BASIC_INFO/cluster.size";
+my $CLUSTER_SP = "$BASIC_INFO/cluster.sp";
 my $CLUSTER_SP_NUM = "$BASIC_INFO/cluster.sp_num";
 my $CLUSTER_GENE_NUM = "$BASIC_INFO/cluster.gene_num";
 my $CLUSTER_PARALOG_NUM = "$BASIC_INFO/cluster.paralog_num";
@@ -62,6 +63,7 @@ my $SP_GENE_DUPLI_FREQ_RATIO = "$BASIC_INFO/sp.gene_dupli_freq_ratio";
 my $SP_DOMAIN_DUPLI_FREQ_RATIO = "$BASIC_INFO/sp.domain_dupli_freq_ratio";
 exec_and_save("dclst2tsv -a $INPUT", $CLUSTER_DESCR);
 exec_and_save("cat $CLUSTER | cut 1 | freq -s", $CLUSTER_SIZE);
+exec_and_save("cat $CLUSTER | cut 1 : | sort | uniq", $CLUSTER_SP);
 exec_and_save("cat $CLUSTER | cut 1 : | sort | uniq | cut 1 | freq -s", $CLUSTER_SP_NUM);
 exec_and_save("cat $CLUSTER | cut 1,2 | sort | uniq | cut 1 | freq -s", $CLUSTER_GENE_NUM);
 exec_and_save("table_subtract $CLUSTER_SIZE $CLUSTER_SP_NUM", $CLUSTER_PARALOG_NUM);
@@ -178,15 +180,24 @@ exec_and_save("cat $LINK_ALL | link.prok_euk $TAXON_DIR/Superkingdom", $LINK_ALL
 exec_and_save("cat $LINK_ALL | $FILTER cut -f5 | perl -pe 's/,/\\n/g' | freq | freq2ratio -f -0 $SP_CLUSTER_NUM", $SP_FUSION_RATE);
 exec_and_save("cat $LINK_ALL | grep FISSION | cut -f6 | grep . | perl -pe 's/,/\\n/g' | freq | freq2ratio -f -0 $SP_CLUSTER_NUM", $SP_FISSION_RATE);
 ! (-s "$NETWORK/link.prok" || -s "$NETWORK/link.euk" || -s "$NETWORK/link.prok_euk") and exec_command("cluster_link_prok_euk -k $CLUSTER_PROK_EUK $NETWORK");
+
 exec_and_save("mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS -v 3 $SP_FUSION_RATE", $TAXID_NODE_FUSION_RATE_MEAN); # IMPORTANT
 exec_and_save("table_summary $TAXID_NODE_FUSION_RATE_MEAN $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS", $TAXID_NODE_FUSION_RATE_MEAN_SUMMARY);
 append_header($TAXID_NODE_FUSION_RATE_MEAN_SUMMARY, "${TAXID_NODE_FUSION_RATE_MEAN_SUMMARY}.txt", "taxid", "avg fusion_rate", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
+
 exec_and_save("mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS -v 4 $SP_PARALOG_FREQ_RATIO", $TAXID_NODE_PARALOG_RATE_MEAN);
 exec_and_save("table_summary $TAXID_NODE_PARALOG_RATE_MEAN $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS", $TAXID_NODE_PARALOG_RATE_MEAN_SUMMARY);
 append_header($TAXID_NODE_PARALOG_RATE_MEAN_SUMMARY, "${TAXID_NODE_PARALOG_RATE_MEAN_SUMMARY}.txt", "taxid", "avg paralog_rate", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
+
 exec_and_save("mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS $GENE_NUM", $TAXID_NODE_GENE_NUM_MEAN);
 exec_and_save("table_summary $TAXID_NODE_GENE_NUM_MEAN $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS", $TAXID_NODE_GENE_NUM_MEAN_SUMMARY);
 append_header($TAXID_NODE_GENE_NUM_MEAN_SUMMARY, "${TAXID_NODE_GENE_NUM_MEAN_SUMMARY}.txt", "taxid", "avg gene_num", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
+
+exec_and_save("cat network/link.all | link.degree.sp_all basic_info/cluster.sp", "network/sp.degree");
+exec_and_save("mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS -v 3 $NETWORK/sp.degree", "$NETWORK/taxid_node.degree_mean");
+exec_and_save("table_summary $NETWORK/taxid_node.degree_mean $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS",  "$NETWORK/taxid_node.degree_mean.summary");
+append_header("$NETWORK/taxid_node.degree_mean.summary", "$NETWORK/taxid_node.degree_mean.summary.txt", "taxid", "avg degree", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
+
 exec_and_save("cat $LINK_ALL | link.degree", $CLUSTER_DEGREE);
 exec_and_save("cat $CLUSTER_DEGREE | cut 2 | freq | sort -k1,1n", $CLUSTER_DEGREE_FREQ);
 exec_and_save("cat $LINK_ALL | link.break_hubs -d 6 -t $TAXON_DIR/Superkingdom $CLUSTER_DEGREE", $LINK_UNDER_DEGREE_TXT);
