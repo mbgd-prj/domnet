@@ -1,0 +1,105 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK | $PROGRAM cluster_sp TAXON_NODE_DESCENDENTS
+-m: calculate mean degree
+";
+
+my %OPT;
+getopts('m', \%OPT);
+
+my ($CLUSTER_SP, $TAXON_NODE_DESCENDENTS);
+if (@ARGV == 1) {
+    ($CLUSTER_SP) = @ARGV;
+} elsif (@ARGV == 2) {
+    ($CLUSTER_SP, $TAXON_NODE_DESCENDENTS) = @ARGV;
+} else {
+    print STDERR $USAGE;
+    exit 1;
+}
+
+my %TAX2SPS;
+open(TAXON_NODE_DESCENDENTS, $TAXON_NODE_DESCENDENTS) || die;
+while (<TAXON_NODE_DESCENDENTS>) {
+    chomp;
+    my @f = split;
+    if (@f != 2) {
+        die;
+    }
+    my ($taxid, $sps) = @f;
+    $TAX2SPS{$taxid} = $sps;
+}
+close(TAXON_NODE_DESCENDENTS);
+
+-t and die $USAGE;
+my @LINK = ();
+while (<STDIN>) {
+    chomp;
+    my ($link) = split("\t", $_);
+    push @LINK, $link;
+}
+
+my %ALL_SP = ();
+my %INCLUDES = ();
+open(CLUSTER_SP, "$CLUSTER_SP") || die;
+while (<CLUSTER_SP>) {
+    chomp;
+    my @f = split;
+    if (@f != 2) {
+        die;
+    }
+    my ($cluster, $sp) = @f;
+    $ALL_SP{$sp} = 1;
+    $INCLUDES{$sp}{$cluster} = 1;
+}
+close(CLUSTER_SP);
+
+for my $taxid (sort {$a <=> $b} keys %TAX2SPS) {
+    my $sps = $TAX2SPS{$taxid};
+    my @degree = get_degree_dist($sps);
+    print $taxid, "\t", join(',', @degree), "\n";
+}
+
+################################################################################
+### Function ###################################################################
+################################################################################
+
+sub get_degree_dist {
+    my ($sps) = @_;
+
+    my %degree = ();
+    for my $link (@LINK) {
+        my ($cluster1, $cluster2) = split("-", $link);
+        if (includes_sps($cluster1, $sps) && includes_sps($cluster2, $sps)) {
+            if ($cluster1 eq $cluster2) {
+                $degree{$cluster1}++;
+            } else {
+                $degree{$cluster1}++;
+                $degree{$cluster2}++;
+            }
+        }
+    }
+
+    my @degree = ();
+    for my $cluster (sort { $a cmp $b } keys %degree) {
+        push @degree, $degree{$cluster};
+    }
+
+    return @degree;
+}
+
+sub includes_sps {
+    my ($cluster, $sps) = @_;
+
+    my @sp = split(',', $sps);
+    for my $sp (@sp) {
+        if ($INCLUDES{$sp}{$cluster}) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
