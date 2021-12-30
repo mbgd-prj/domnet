@@ -188,7 +188,7 @@ exec_and_save("mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCEND
 exec_and_save("table_summary $TAXID_NODE_GENE_NUM_MEAN $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS", $TAXID_NODE_GENE_NUM_MEAN_SUMMARY);
 append_header($TAXID_NODE_GENE_NUM_MEAN_SUMMARY, "${TAXID_NODE_GENE_NUM_MEAN_SUMMARY}.txt", "taxid", "avg gene_num", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
 
-exec_and_save("cat network/link.all | link.degree.sp_all basic_info/cluster.sp", "network/sp.degree");
+exec_and_save("cat network/link.all | link.degree.sp basic_info/cluster.sp", "network/sp.degree");
 exec_and_save("mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS -v 3 network/sp.degree", "network/taxid_node.degree_mean");
 exec_and_save("table_summary network/taxid_node.degree_mean $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS",  "network/taxid_node.degree_mean.summary");
 append_header("network/taxid_node.degree_mean.summary", "network/taxid_node.degree_mean.summary.txt", "taxid", "avg degree", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
