@@ -11,6 +11,6 @@ cin = csv.reader(sys.stdin)
 for row in cin:
     nums = [int(n) for n in row]
     results = powerlaw.Fit(nums)
-    powerlaw.plot_pdf(nums)
-    # powerlaw.plot_pdf(nums, ax=ax)
+    fig = powerlaw.plot_pdf(nums, color='tab:blue')
+    powerlaw.plot_ccdf(nums, ax=fig, color='tab:orange')
     plt.show()
