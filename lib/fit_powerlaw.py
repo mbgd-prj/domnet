@@ -18,6 +18,6 @@ for row in cin:
 
     # R, p = results.distribution_compare('power_law', 'lognormal')
     R, p = results.distribution_compare('power_law', 'exponential')
-    print(R, p, file=f, sep='\t')
+    print(R, p, file=f, sep='\t', flush=True)
 
 f.close()
