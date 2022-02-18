@@ -26,6 +26,8 @@ for row in cin:
     for i in range(len(prob)):
         print(f'{int(bin[i])}-{int(bin[i+1])}', prob[i], sep='\t')
 
+    print('a =', results.alpha, sep='\t')
+
     fig = results.plot_ccdf(color='tab:orange', label='cumulative distribution function', linewidth=1, marker='.')
     results.power_law.plot_ccdf(ax=fig, color='tab:orange', linestyle=':', linewidth=1)
     results.plot_pdf(ax=fig, color='tab:blue', label='probability density function', linewidth=1, marker='.')
