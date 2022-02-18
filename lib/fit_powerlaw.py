@@ -4,11 +4,12 @@ import powerlaw
 import sys
 import csv
 
-parser = argparse.ArgumentParser(description='Fit power law distribution')
-parser.add_argument('output', help='output file')
+parser = argparse.ArgumentParser(description='Fit data to power law distribution')
+parser.add_argument('-o', '--outfile', help='output file name')
 args = parser.parse_args()
 
-f = open(args.output, mode='w')
+if args.outfile:
+    f = open(args.outfile, mode='w')
 
 cin = csv.reader(sys.stdin)
 for row in cin:
@@ -23,6 +24,10 @@ for row in cin:
 
     # R, p = results.distribution_compare('power_law', 'lognormal')
     R, p = results.distribution_compare('power_law', 'exponential')
-    print(R, p, file=f, sep='\t', flush=True)
+    if args.outfile:
+        print(R, p, file=f, sep='\t', flush=True)
+    else:
+        print(R, p, sep='\t', flush=True)
 
-f.close()
+if args.outfile:
+    f.close()
