@@ -28,6 +28,7 @@ for line in sys.stdin.readlines():
     xmin = results.xmin
     results = powerlaw.Fit(nums, xmin=1.0)
 
+    print()
     print('CCDF')
     x, y = results.ccdf()
     if len(x) != len(y):
@@ -35,6 +36,7 @@ for line in sys.stdin.readlines():
     for i in range(len(x)):
         print(int(x[i]), y[i], sep='\t')
 
+    print()
     print('PDF')
     bin, prob = results.pdf()
     if len(bin) != len(prob) + 1:
@@ -42,6 +44,7 @@ for line in sys.stdin.readlines():
     for i in range(len(prob)):
         print(f'{int(bin[i])}-{int(bin[i+1])}', prob[i], sep='\t')
 
+    print()
     print('a =', results.alpha, sep='\t')
     print('xmin =', xmin, sep='\t')
 
