@@ -19,7 +19,7 @@ for line in sys.stdin.readlines():
     results = powerlaw.Fit(nums, xmin=1.0)
     # R, p = results.distribution_compare('power_law', 'lognormal')
     R, p = results.distribution_compare('power_law', 'exponential')
-    print(R, p, results.alpha, file=f, sep='\t', flush=True)
+    print(fields[0], R, p, results.alpha, file=f, sep='\t', flush=True)
 
 if args.outfile:
     f.close()
