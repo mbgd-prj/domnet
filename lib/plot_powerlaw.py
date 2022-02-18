@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 cin = csv.reader(sys.stdin)
 for row in cin:
     nums = [int(n) for n in row]
+    results = powerlaw.Fit(nums)
+    xmin = results.xmin
     results = powerlaw.Fit(nums, xmin=1.0)
 
     print('CCDF')
@@ -27,6 +29,7 @@ for row in cin:
         print(f'{int(bin[i])}-{int(bin[i+1])}', prob[i], sep='\t')
 
     print('a =', results.alpha, sep='\t')
+    print('xmin =', xmin, sep='\t')
 
     fig = results.plot_ccdf(color='tab:orange', label='cumulative distribution function', linewidth=1, marker='.')
     results.power_law.plot_ccdf(ax=fig, color='tab:orange', linestyle=':', linewidth=1)
