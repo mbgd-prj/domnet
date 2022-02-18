@@ -22,7 +22,8 @@ for line in sys.stdin.readlines():
         continue
     results = powerlaw.Fit(nums, xmin=1.0)
     # R, p = results.distribution_compare('power_law', 'lognormal')
-    R, p = results.distribution_compare('power_law', 'exponential')
+    R, p = results.distribution_compare('power_law', 'exponential', normalized_ratio=True)
+    # R, p = results.distribution_compare('power_law', 'truncated_power_law')
     print(fields[0], R, p, results.alpha, file=f, sep='\t', flush=True)
 
 if args.outfile:
