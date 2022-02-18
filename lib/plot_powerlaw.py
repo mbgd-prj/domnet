@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 import powerlaw
 import sys
-import csv
 import matplotlib.pyplot as plt
 # fig = plt.figure()
 # ax = fig.add_subplot(111)
 # line = sys.stdin.readline()
 
-cin = csv.reader(sys.stdin)
-for row in cin:
-    nums = [int(n) for n in row]
+for line in sys.stdin.readlines():
+    fields = line.split('\t')
+    if len(fields) != 2:
+        print('ERROR: len(fields) != 2', file=sys.stderr)
+        sys.exit(1)
+    try:
+        nums = [int(n) for n in fields[1].split(',')]
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        continue
     results = powerlaw.Fit(nums)
     xmin = results.xmin
     results = powerlaw.Fit(nums, xmin=1.0)
