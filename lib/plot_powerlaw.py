@@ -23,7 +23,7 @@ for line in sys.stdin.readlines():
         print(error, file=sys.stderr)
         continue
 
-    results = powerlaw.Fit(nums)
+    results = powerlaw.Fit(nums, discrete=True, estimate_discrete=True)
     xmin = results.xmin
     results = powerlaw.Fit(nums, xmin=1.0)
 
