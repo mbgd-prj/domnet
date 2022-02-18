@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
+import argparse
 import powerlaw
 import sys
 import csv
 
-f = open('test_powerlaw_exponential', mode='w')
+parser = argparse.ArgumentParser(description='Fit power law distribution')
+parser.add_argument('output', help='output file')
+args = parser.parse_args()
+
+f = open(args.output, mode='w')
 
 cin = csv.reader(sys.stdin)
 for row in cin:
