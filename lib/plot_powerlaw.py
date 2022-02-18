@@ -33,3 +33,4 @@ for row in cin:
     plt.xlim(1,100)
     plt.legend()
     plt.show()
+    # plt.savefig('powerlaw')
