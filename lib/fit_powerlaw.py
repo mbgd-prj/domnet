@@ -15,7 +15,11 @@ for line in sys.stdin.readlines():
     fields = line.split('\t')
     if len(fields) != 2:
         sys.exit(1)
-    nums = [int(n) for n in fields[1].split(',')]
+    try:
+        nums = [int(n) for n in fields[1].split(',')]
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        continue
     results = powerlaw.Fit(nums, xmin=1.0)
     # R, p = results.distribution_compare('power_law', 'lognormal')
     R, p = results.distribution_compare('power_law', 'exponential')
