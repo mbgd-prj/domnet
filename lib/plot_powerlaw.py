@@ -11,7 +11,6 @@ args = parser.parse_args()
 
 # fig = plt.figure()
 # ax = fig.add_subplot(111)
-# line = sys.stdin.readline()
 
 for line in sys.stdin.readlines():
     fields = line.split('\t')
