@@ -2,7 +2,6 @@
 import argparse
 import powerlaw
 import sys
-import csv
 
 parser = argparse.ArgumentParser(description='Fit data to power law distribution')
 parser.add_argument('-o', '--outfile', help='output file name')
@@ -12,9 +11,11 @@ f = sys.stdout
 if args.outfile:
     f = open(args.outfile, mode='w')
 
-cin = csv.reader(sys.stdin)
-for row in cin:
-    nums = [int(n) for n in row]
+for line in sys.stdin.readlines():
+    fields = line.split('\t')
+    if len(fields) != 2:
+        sys.exit(1)
+    nums = [int(n) for n in fields[1].split(',')]
     results = powerlaw.Fit(nums, xmin=1.0)
     # R, p = results.distribution_compare('power_law', 'lognormal')
     R, p = results.distribution_compare('power_law', 'exponential')
