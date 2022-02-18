@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 cin = csv.reader(sys.stdin)
 for row in cin:
     nums = [int(n) for n in row]
-    results = powerlaw.Fit(nums)
+    results = powerlaw.Fit(nums, xmin=1.0)
 
     print('CCDF')
     x, y = results.ccdf()
