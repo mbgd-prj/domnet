@@ -12,14 +12,14 @@ for row in cin:
     nums = [int(n) for n in row]
     results = powerlaw.Fit(nums)
 
-    print('ccdf')
+    print('CCDF')
     x, y = results.ccdf()
     if len(x) != len(y):
         sys.exit(1)
     for i in range(len(x)):
         print(int(x[i]), y[i], sep='\t')
 
-    print('pdf')
+    print('PDF')
     bin, prob = results.pdf()
     if len(bin) != len(prob) + 1:
         sys.exit(1)
