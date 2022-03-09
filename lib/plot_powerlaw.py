@@ -44,16 +44,16 @@ for line in sys.stdin.readlines():
         print(f'{int(bin[i])}-{int(bin[i+1])}', prob[i], sep='\t')
 
     print()
-    print('a =', results.alpha, sep='\t')
-    print('xmin =', xmin, sep='\t')
+    print('a =', results.alpha)
+    print('estimated xmin =', xmin)
 
     if not args.quiet:
         fig = results.plot_ccdf(linewidth=1, marker='.', color='tab:orange', label='cumulative distribution function')
         results.plot_pdf(ax=fig, linewidth=1, marker='.', color='tab:blue', label='probability density function')
         results.power_law.plot_ccdf(linewidth=1, linestyle=':', color='tab:orange', ax=fig)
         results.power_law.plot_pdf(linewidth=1, linestyle=':', color='tab:blue', ax=fig)
-        plt.xlim(0.9, max(max(x), 100))
-        plt.ylim(min(min(y), min(prob), 0.00002), 2.5)
+        plt.xlim(0.9, max(max(x), 400))
+        # plt.ylim(min(min(y), min(prob), 0.00002), 2.5)
         plt.legend()
         if args.outname:
             plt.savefig(args.outname)
