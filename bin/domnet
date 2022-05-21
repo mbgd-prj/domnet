@@ -247,38 +247,38 @@ print_log("Figures");
 my $FIGURE_DIR = "figure";
 mkdir_with_check($FIGURE_DIR);
 chdir $FIGURE_DIR || die;
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 14 genes split");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 15 genes clusters");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 17 genes paralogs");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 19 genes fusions");
-exec_command("domnet_plot_multi -p sp_multi ../$SP_FUSION_SUMMARY 10 19 genes fusions"); # important?
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 21 genes fissions");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 12 17 splitGenes paralogs");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 12 19 splitGenes fusions");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 14 17 splits paralogs");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 14 19 splits fusions");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 17 19 paralogs fusions"); # important?
-exec_command("domnet_plot_multi -p sp_multi ../$SP_FUSION_SUMMARY 17 19 paralogs fusions"); # important?
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 21 fusions fissions");
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 24 fusions duplications"); # important?
-exec_command("domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 25 fusions dupliDomains"); # important?
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 14 genes split");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 15 genes clusters");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 17 genes paralogs");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 19 genes fusions");
+exec_plot("domnet_plot_multi -p sp_multi ../$SP_FUSION_SUMMARY 10 19 genes fusions"); # important?
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 10 21 genes fissions");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 12 17 splitGenes paralogs");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 12 19 splitGenes fusions");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 14 17 splits paralogs");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 14 19 splits fusions");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 17 19 paralogs fusions"); # important?
+exec_plot("domnet_plot_multi -p sp_multi ../$SP_FUSION_SUMMARY 17 19 paralogs fusions"); # important?
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 21 fusions fissions");
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 24 fusions duplications"); # important?
+exec_plot("domnet_plot -p sp ../$SP_FUSION_SUMMARY 19 25 fusions dupliDomains"); # important?
 
-exec_command("domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 2 5 domains degree");
-exec_command("domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 2 3 domains paralogs");
-exec_command("domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 3 5 species degree");
-exec_command("domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 4 5 paralogs degree");
+exec_plot("domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 2 5 domains degree");
+exec_plot("domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 2 3 domains paralogs");
+exec_plot("domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 3 5 species degree");
+exec_plot("domnet_plot -p cluster -xy ../$CLUSTER_SUMMARY 4 5 paralogs degree");
 
-exec_command("domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 2 3 genes paralogs");
-exec_command("domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 2 4 genes fusions");
-exec_command("domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 3 4 paralogs fusions");
+exec_plot("domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 2 3 genes paralogs");
+exec_plot("domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 2 4 genes fusions");
+exec_plot("domnet_plot -p tax ../$TAXID_NODE_GENE_PARALOG_FUSION 3 4 paralogs fusions");
 for my $cat (@FUNCTION_CATEGORY) {
-    exec_command("domnet_plot -p $cat ../network/func_analysis/link.all.$cat 4 5 domains species");
-    exec_command("domnet_plot -p $cat ../network/func_analysis/link.all.$cat 4 8 domains fusinos");
-    exec_command("domnet_plot -p $cat ../network/func_analysis/link.all.$cat 5 8 species fusinos");
-    exec_command("domnet_plot -p $cat ../network/func_analysis/link.all.$cat 6 8 paralogs fusions");
+    exec_plot("domnet_plot -p $cat ../network/func_analysis/link.all.$cat 4 5 domains species");
+    exec_plot("domnet_plot -p $cat ../network/func_analysis/link.all.$cat 4 8 domains fusinos");
+    exec_plot("domnet_plot -p $cat ../network/func_analysis/link.all.$cat 5 8 species fusinos");
+    exec_plot("domnet_plot -p $cat ../network/func_analysis/link.all.$cat 6 8 paralogs fusions");
 }
 
-exec_command("domnet_plot -l -xy ../$CLUSTER_DEGREE_FREQ 1 2 degree frequency");
+exec_plot("domnet_plot -l -xy ../$CLUSTER_DEGREE_FREQ 1 2 degree frequency");
 
 chdir "..";
 
@@ -338,6 +338,12 @@ sub exec_command {
     my ($command) = @_;
 
     print "\$ $command\n";
+    system "$command";
+}
+
+sub exec_plot {
+    my ($command) = @_;
+
     system "$command";
 }
 
