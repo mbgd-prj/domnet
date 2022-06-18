@@ -23,12 +23,14 @@ if ($OPT{t}) {
 }
 
 my %SIGNIFICANT_TAXON = ();
+my @SIGNIFICANT_LINK = ();
 if ($OPT{T}) {
     open(SIGNIFICANT_TAXON_INFO, $OPT{T}) || die;
     while (<SIGNIFICANT_TAXON_INFO>) {
 	my @f = split("\t", $_);
 	my $link = $f[0];
 	my $significant_taxon = $f[3];
+        push @SIGNIFICANT_LINK, $link;
 	$SIGNIFICANT_TAXON{$link} = $significant_taxon;
     }
     close(SIGNIFICANT_TAXON_INFO)
@@ -71,9 +73,13 @@ push @HEADER, ("significant_taxon", "significant_taxon_full");
 print join("\t", @HEADER), "\n";
 
 my %REPLICATE = ();
-while (<STDIN>) {
-    chomp;
-    my ($link, $n_link, $link_ratio, $link_type, $sp_list) = split("\t", $_);
+my @LINE = <STDIN>;
+my @LINK = ();
+my %OUT = ();
+for my $line (@LINE) {
+    chomp($line);
+    my ($link, $n_link, $link_ratio, $link_type, $sp_list) = split("\t", $line);
+    push @LINK, $link;
     if (! $SIGNIFICANT_TAXON{$link}) {
 	next;
     }
@@ -120,5 +126,17 @@ while (<STDIN>) {
 	print STDERR $link, "\n";
     }
 
-    print join("\t", @out), "\n";
+    # print join("\t", @out), "\n";
+    $OUT{$link} = join("\t", @out);
+}
+
+# for my $link (@LINK) {
+#     if (! $SIGNIFICANT_TAXON{$link}) {
+# 	next;
+#     }
+#     print $OUT{$link}, "\n";
+# }
+
+for my $link (@SIGNIFICANT_LINK) {
+    print $OUT{$link}, "\n";
 }
