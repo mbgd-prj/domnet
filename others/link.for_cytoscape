@@ -69,7 +69,9 @@ if ($OPT{t}) {
     push @HEADER, "prok_euk";
 }
 push @HEADER, ("edge_n_sp", "edge_with_ratio");
-push @HEADER, ("significant_taxon", "significant_taxon_full");
+if ($OPT{T}) {
+    push @HEADER, ("significant_taxon", "significant_taxon_full");
+}
 print join("\t", @HEADER), "\n";
 
 my %REPLICATE = ();
@@ -80,9 +82,6 @@ for my $line (@LINE) {
     chomp($line);
     my ($link, $n_link, $link_ratio, $link_type, $sp_list) = split("\t", $line);
     push @LINK, $link;
-    if (! $SIGNIFICANT_TAXON{$link}) {
-	next;
-    }
     my ($cluster1, $cluster2) = split("-", $link);
 
     my @sp = split(",", $sp_list);
@@ -122,21 +121,17 @@ for my $line (@LINE) {
 	    $significant_taxon = $1;
 	}
 	push @out, $significant_taxon, $significant_taxon_full;
-    } else {
-	print STDERR $link, "\n";
     }
 
-    # print join("\t", @out), "\n";
     $OUT{$link} = join("\t", @out);
 }
 
-# for my $link (@LINK) {
-#     if (! $SIGNIFICANT_TAXON{$link}) {
-# 	next;
-#     }
-#     print $OUT{$link}, "\n";
-# }
-
-for my $link (@SIGNIFICANT_LINK) {
-    print $OUT{$link}, "\n";
+if ($OPT{T}) {
+    for my $link (@SIGNIFICANT_LINK) {
+        print $OUT{$link}, "\n";
+    }
+} else {
+    for my $link (@LINK) {
+        print $OUT{$link}, "\n";
+    }
 }
