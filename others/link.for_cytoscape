@@ -114,21 +114,17 @@ for my $line (@LINE) {
 
     push @out, ($n_sp, $link_ratio);
 
-    if ($SIGNIFICANT_TAXON{$link}) {
-	my $significant_taxon_full = $SIGNIFICANT_TAXON{$link};
-	my $significant_taxon = $significant_taxon_full;
-	if ($significant_taxon_full =~ /(.*) \(\S+\)$/) {
-	    $significant_taxon = $1;
-	}
-	push @out, $significant_taxon, $significant_taxon_full;
-    }
-
     $OUT{$link} = join("\t", @out);
 }
 
 if ($OPT{T}) {
     for my $link (@SIGNIFICANT_LINK) {
-        print $OUT{$link}, "\n";
+	my $significant_taxon_full = $SIGNIFICANT_TAXON{$link};
+	my $significant_taxon = $significant_taxon_full;
+	if ($significant_taxon_full =~ /(.*) \(\S+\)$/) {
+	    $significant_taxon = $1;
+	}
+        print $OUT{$link}, "\t", $significant_taxon, "\t", $significant_taxon_full, "\n";
     }
 } else {
     for my $link (@LINK) {
