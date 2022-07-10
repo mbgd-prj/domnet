@@ -108,7 +108,8 @@ sub sample_values {
 	if (defined $SAMPLE_VALUE{$sample}) {
 	    push @value, $SAMPLE_VALUE{$sample};
 	} else {
-	    die;
+            print STDERR "$sample not found\n";
+	    # die;
 	}
     }
 

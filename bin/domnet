@@ -227,7 +227,7 @@ if (! -e 'network/filter/node_edge/dist.gradient') {
     exec_command('for i in $(cat network/filter/node_edge/taxid_node_edge.degree | cut 1); do cat network/filter/node_edge/dist.density/$i.* | domnet_plot_gradient.R -xy | sed -n 2p > network/filter/node_edge/dist.gradient/$i; done');
 }
 exec_and_save('grep . network/filter/node_edge/dist.gradient/* | grep_gradient.pl | sed "s/	/z/" | sort | sed "s/z/	/"', 'network/filter/node_edge/dist.gradients');
-exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node_edge/dist.gradients', 'network/filter/node_edge/sp_taxid_gradient');
+exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node_edge/dist.gradients | grep -v NOT_FOUND', 'network/filter/node_edge/sp_taxid_gradient');
 exec_and_save('cat additional_info/sp.taxon_summary | table basic_info/sp.gene_num | table network/filter/node_edge/sp_taxid_gradient', 'network/filter/node_edge/sp_taxid_gradient.summary.tsv');
 !-s 'network/filter/node_edge/taxid_node_edge.degree.powerlaw' and exec_command('cat network/filter/node_edge/taxid_node_edge.degree | fit_powerlaw.py -o network/filter/node_edge/taxid_node_edge.degree.powerlaw 2> network/filter/node_edge/taxid_node_edge.degree.powerlaw.err');
 # exec_and_save('cat additional_info/sp.taxid | table basic_info/sp.gene_num | table -k 2 network/filter/node_edge/taxid_node_edge.degree.powerlaw', 'network/filter/node_edge/taxid_node_edge.degree.powerlaw.genenum');
@@ -249,11 +249,19 @@ if (! -e 'network/filter/node/dist.gradient') {
     exec_command('for i in $(cat network/filter/node/taxid_node.degree | cut 1); do cat network/filter/node/dist.density/$i.* | domnet_plot_gradient.R -xy | sed -n 2p > network/filter/node/dist.gradient/$i; done');
 }
 exec_and_save('grep . network/filter/node/dist.gradient/* | grep_gradient.pl', 'network/filter/node/dist.gradients');
-exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node/dist.gradients', 'network/filter/node/sp_taxid_gradient');
+exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node/dist.gradients | grep -v NOT_FOUND', 'network/filter/node/sp_taxid_gradient');
 exec_and_save('cat additional_info/sp.taxon_summary | table basic_info/sp.gene_num | table network/filter/node/sp_taxid_gradient', 'network/filter/node/sp_taxid_gradient.summary.tsv');
 !-s 'network/filter/node/taxid_node.degree.powerlaw' and exec_command('cat network/filter/node/taxid_node.degree | fit_powerlaw.py -o network/filter/node/taxid_node.degree.powerlaw');
 exec_and_save('cat additional_info/sp.taxid | table basic_info/sp.gene_num | table -k 2 network/filter/node/taxid_node.degree.powerlaw', 'network/filter/node/taxid_node.degree.powerlaw.genenum');
 exec_and_save('cat network/sp_taxid_genenum | cut -f2- | table network/filter/node/taxid_node.degree.powerlaw | cut -f2,5', 'network/filter/node/node.genenum_a');
+
+exec_and_save("mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS -v 3 network/filter/node/sp_taxid_gradient", "network/filter/node/taxid_gradient_mean");
+exec_and_save("table_summary network/filter/node/taxid_gradient_mean $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS", "network/filter/node/taxid_gradient_mean.summary");
+append_header("network/filter/node/taxid_gradient_mean.summary", "network/filter/node/taxid_gradient_mean.summary.txt", "taxid", "avg gradient", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
+
+exec_and_save("mean_for_each_taxon -p $TAXID_NODE_PARENTS -d $TAXID_NODE_DESCENDENTS -v 3 network/filter/node_edge/sp_taxid_gradient", "network/filter/node_edge/taxid_gradient_mean");
+exec_and_save("table_summary network/filter/node_edge/taxid_gradient_mean $TAXID_NODE_NAMES $TAXID_NODE_DESCENDENTS", "network/filter/node_edge/taxid_gradient_mean.summary");
+append_header("network/filter/node_edge/taxid_gradient_mean.summary", "network/filter/node_edge/taxid_gradient_mean.summary.txt", "taxid", "avg gradient", "p-value (vs siter taxa)", "log ratio (vs siter taxa)", "p-value (vs all others)", "log ratio (vs all others)");
 
 ### Summary
 print_log("Summary");
