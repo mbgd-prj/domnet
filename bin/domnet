@@ -213,6 +213,10 @@ if ($INPUT =~ /\.dclst$/) {
     }
 }
 
+# files for cytoscape
+exec_and_save("cat network/link.all | link.for_cytoscape -T network/link.ancestor.significant -t additional_info/sp.taxon/Superkingdom network/cluster.degree", "network/link.significant.cytoscape");
+exec_and_save("cat network/link.significant.cytoscape | network.node_attr -T -N basic_info/cluster.sp_num -K additional_info/cluster.prok_euk -F basic_info/cluster.functions -D basic_info/cluster.descr", "network/node.significant.cytoscape");
+
 ### sub-network for each taxon
 exec_and_save('cat additional_info/sp.taxid | table basic_info/sp.gene_num', 'network/sp_taxid_genenum');
 exec_and_save('cat additional_info/taxid_nodes/taxid_node.descendents | cut 2 | perl -lane "print scalar(split(\',\', $_))"', 'network/taxid_node.descendents_num');
