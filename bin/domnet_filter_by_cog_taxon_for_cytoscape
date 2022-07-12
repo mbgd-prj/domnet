@@ -12,56 +12,10 @@ getopts('', \%OPT);
 
 my ($CLUSTER_SP, $TAXON_NODE_DESCENDENTS, $COG, @TAXA) = @ARGV;
 
-STDOUT->autoflush;
-
-my %TAX2SPS;
-open(TAXON_NODE_DESCENDENTS, $TAXON_NODE_DESCENDENTS) || die;
-while (<TAXON_NODE_DESCENDENTS>) {
-    chomp;
-    my @f = split;
-    if (@f != 2) {
-        die;
-    }
-    my ($taxid, $sps) = @f;
-    $TAX2SPS{$taxid} = $sps;
-}
-close(TAXON_NODE_DESCENDENTS);
-
 if (@TAXA != 2) {
     die;
 }
-my %TAX1_INCLUDES = ();
-{
-    my $taxid = $TAXA[0];
-    my $sps = $TAX2SPS{$taxid};
-    my @sp = split(",", $sps);
-    for my $sp (@sp) {
-        $TAX1_INCLUDES{$sp} = 1;
-    }
-}
-my %TAX2_INCLUDES = ();
-{
-    my $taxid = $TAXA[1];
-    my $sps = $TAX2SPS{$taxid};
-    my @sp = split(",", $sps);
-    for my $sp (@sp) {
-        $TAX2_INCLUDES{$sp} = 1;
-    }
-}
 
-my %CHECK_SP = ();
-for my $taxid (@TAXA) {
-    my $sps = $TAX2SPS{$taxid};
-    my @sp = split(",", $sps);
-    for my $sp (@sp) {
-        $CHECK_SP{$sp} = 1;
-    }
-}
-
-my %CHECK_CLUSTER = ();
-
-my %ALL_SP = ();
-my %INCLUDES = ();
 my %CLUSTER_SP = ();
 open(CLUSTER_SP, "$CLUSTER_SP") || die;
 while (<CLUSTER_SP>) {
@@ -71,14 +25,27 @@ while (<CLUSTER_SP>) {
         die;
     }
     my ($cluster, $sp) = @f;
-    $ALL_SP{$sp} = 1;
-    $INCLUDES{$sp}{$cluster} = 1;
     $CLUSTER_SP{$cluster}{$sp} = 1;
-    if ($CHECK_SP{$sp}) {
-        $CHECK_CLUSTER{$cluster} = 1;
-    }
 }
 close(CLUSTER_SP);
+
+my %TAX_INCLUDES_SP;
+open(TAXON_NODE_DESCENDENTS, $TAXON_NODE_DESCENDENTS) || die;
+while (<TAXON_NODE_DESCENDENTS>) {
+    chomp;
+    my @f = split;
+    if (@f != 2) {
+        die;
+    }
+    my ($taxid, $sps) = @f;
+    my @sp = split(/,/, $sps);
+    for my $sp (@sp) {
+        $TAX_INCLUDES_SP{$taxid}{$sp} = 1;
+    }
+}
+close(TAXON_NODE_DESCENDENTS);
+
+STDOUT->autoflush;
 
 my @header = ("cluster1", "cluster2", "edge_type", "edge_name", "edge_n_sp", "nodes_in_taxon");
 print join("\t", @header), "\n";
@@ -101,54 +68,26 @@ while (<STDIN>) {
 ### Function ###################################################################
 ################################################################################
 
-sub includes_sps {
-    my ($cluster, $sps) = @_;
-
-    my @sp = split(',', $sps);
-    for my $sp (@sp) {
-        if ($INCLUDES{$sp}{$cluster}) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
 sub get_link_type {
     my ($cluster1, $cluster2) = @_;
 
-    if (include_tax1($cluster1) && include_tax1($cluster2) &&
-        include_tax2($cluster1) && include_tax2($cluster2)
-        ) {
+    my $includes1 = cluster_includes_taxon($cluster1, $TAXA[0]) && cluster_includes_taxon($cluster2, $TAXA[0]);
+    my $includes2 = cluster_includes_taxon($cluster1, $TAXA[1]) && cluster_includes_taxon($cluster2, $TAXA[1]);
+    if ($includes1 && $includes2) {
         return "both";
-    }
-    if (include_tax1($cluster1) && include_tax1($cluster2)) {
+    } elsif ($includes1) {
         return "tax$TAXA[0]";
-    }
-    if (include_tax2($cluster1) && include_tax2($cluster2)) {
+    } elsif ($includes2) {
         return "tax$TAXA[1]";
     }
 }
 
-sub include_tax1 {
-    my ($cluster) = @_;
+sub cluster_includes_taxon {
+    my ($cluster, $taxon) = @_;
 
     my @sps = sort keys %{$CLUSTER_SP{$cluster}};
     for my $sp (@sps) {
-        if ($TAX1_INCLUDES{$sp}) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-sub include_tax2 {
-    my ($cluster) = @_;
-
-    my @sps = sort keys %{$CLUSTER_SP{$cluster}};
-    for my $sp (@sps) {
-        if ($TAX2_INCLUDES{$sp}) {
+        if ($TAX_INCLUDES_SP{$taxon}{$sp}) {
             return 1;
         }
     }
