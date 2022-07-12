@@ -1,0 +1,31 @@
+#default	4.2
+cog	1	Metabolism	
+cog	1.1	Amino acid transport and metabolism	E
+cog	1.2	Nucleotide transport and metabolism	F
+cog	1.3	Lipid transport and metabolism	I
+cog	1.4	Coenzyme transport and metabolism	H
+cog	1.5	Carbohydrate transport and metabolism	G
+cog	1.6	Energy production and conversion	C
+cog	1.7	Inorganic ion transport and metabolism	P
+cog	1.8	Secondary metabolites biosynthesis, transport and catabolism	Q
+cog	2	Information starage and processing	
+cog	2.1	Replication, recombination and repair	L
+cog	2.2	Chromatin structure and dynamics	B
+cog	2.3	Transcription	K
+cog	2.4	RNA processing and modification	A
+cog	2.5	Translation, ribosomal structure and biogenesis	J
+cog	3	Cellular processes and signaling	
+cog	3.1	Intracellular trafficking, secretion, and vesicular transport	U
+cog	3.2	Posttranslational modification, protein turnover, chaperones	O
+cog	3.3	Signal transduction mechanisms	T
+cog	3.4	Cell wall/membrane/envelope biogenesis	M
+cog	3.5	Cell cycle control, cell division, chromosome partitioning	D
+cog	3.6	Cell motility	N
+cog	3.7	Defense mechanisms	V
+cog	3.8	Cytoskeleton	Z
+cog	3.9	Nuclear structure	Y
+cog	3.10	Extracellular structures	W
+cog	3.11	Mobilome: prophages, transposons	X
+cog	4	Poorly characterized	
+cog	4.1	General function prediction only	R
+cog	4.2	Function unknown	S

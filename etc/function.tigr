@@ -1,0 +1,134 @@
+#default	19
+tigr	1	Amino acid biosynthesis	
+tigr	1.1	Aromatic amino acid family	70
+tigr	1.2	Aspartate family	71
+tigr	1.3	Glutamate family	73
+tigr	1.4	Pyruvate family	74
+tigr	1.5	Serine family	75
+tigr	1.6	Histidine family	161
+tigr	2	Purines, pyrimidines, nucleosides, and nucleotides	
+tigr	2.1	2'-Deoxyribonucleotide metabolism	123
+tigr	2.2	Nucleotide and nucleoside interconversions	124
+tigr	2.3	Purine ribonucleotide biosynthesis	125
+tigr	2.4	Pyrimidine ribonucleotide biosynthesis	126
+tigr	2.5	Salvage of nucleosides and nucleotides	127
+tigr	2.6	Other	122
+tigr	3	Fatty acid and phospholipid metabolism	
+tigr	3.1	Biosynthesis	176
+tigr	3.2	Degradation	177
+tigr	3.3	Other	121
+tigr	4	Biosynthesis of cofactors, prosthetic groups, and carriers	
+tigr	4.1	Biotin	77
+tigr	4.2	Folic acid	78
+tigr	4.3	Heme, porphyrin, and cobalamin	79
+tigr	4.4	Lipoate	80
+tigr	4.5	Menaquinone and ubiquinone	81
+tigr	4.6	Molybdopterin	82
+tigr	4.7	Pantothenate and coenzyme A	83
+tigr	4.8	Pyridoxine	84
+tigr	4.9	Riboflavin, FMN, and FAD	85
+tigr	4.10	Glutathione and analogs	86
+tigr	4.11	Thiamine	162
+tigr	4.12	Pyridine nucleotides	163
+tigr	4.13	Chlorophyll and bacteriochlorphyll	191
+tigr	4.14	Other	76
+tigr	5	Central intermediary metabolism	
+tigr	5.1	Amino sugars	100
+tigr	5.2	One-carbon metabolism	698
+tigr	5.3	Phosphorus compounds	103
+tigr	5.4	Polyamine biosynthesis	104
+tigr	5.5	Sulfur metabolism	106
+tigr	5.6	Nitrogen fixation	179
+tigr	5.7	Nitrogen metabolism	160
+tigr	5.8	Other	102
+tigr	6	Energy metabolism	
+tigr	6.1	Aerobic	108
+tigr	6.2	Amino acids and amines	109
+tigr	6.3	Anaerobic	110
+tigr	6.4	ATP-proton motive force interconversion	111
+tigr	6.5	Electron transport	112
+tigr	6.6	Entner-Doudoroff	113
+tigr	6.7	Fermentation	114
+tigr	6.8	Glycolysis/gluconeogenesis	116
+tigr	6.9	Pentose phosphate pathway	117
+tigr	6.10	Pyruvate dehydrogenase	118
+tigr	6.11	Sugars	119
+tigr	6.12	TCA cycle	120
+tigr	6.13	Methanogenesis	159
+tigr	6.14	Biosynthesis and degradation of polysaccharides	105
+tigr	6.15	Photosynthesis	164
+tigr	6.16	Chemoautotrophy	180
+tigr	6.17	Other	184
+tigr	7	DNA metabolism	
+tigr	7.1	DNA replication, recombination, and repair	132
+tigr	7.2	Restriction/modification	183
+tigr	7.3	Degradation of DNA	131
+tigr	7.4	Chromosome-associated proteins	170
+tigr	7.5	Other	130
+tigr	8	Transcription	
+tigr	8.1	Degradation of RNA	134
+tigr	8.2	DNA-dependent RNA polymerase	135
+tigr	8.3	Transcription factors	165
+tigr	8.4	RNA processing	166
+tigr	8.5	Other	133
+tigr	9	Protein synthesis	
+tigr	9.1	tRNA aminoacylation	137
+tigr	9.2	Ribosomal proteins: synthesis and modification	158
+tigr	9.3	tRNA and rRNA base modification	168
+tigr	9.4	Translation factors	169
+tigr	9.5	Other	136
+tigr	10	Protein fate	
+tigr	10.1	Protein and peptide secretion and trafficking	97
+tigr	10.2	Protein modification and repair	140
+tigr	10.3	Protein folding and stabilization	95
+tigr	10.4	Degradation of proteins, peptides, and glycopeptides	138
+tigr	10.5	Other	189
+tigr	11	Transport and binding proteins	
+tigr	11.1	Amino acids, peptides and amines	142
+tigr	11.2	Anions	143
+tigr	11.3	Carbohydrates, organic alcohols, and acids	144
+tigr	11.4	Cations and iron carrying compounds	145
+tigr	11.5	Nucleosides, purines and pyrimidines	146
+tigr	11.6	Porins	182
+tigr	11.7	Other	147
+tigr	11.8	Unknown substrate	141
+tigr	12	Regulatory functions	
+tigr	12.1	DNA interactions	261
+tigr	12.2	RNA interactions	262
+tigr	12.3	Protein interactions	263
+tigr	12.4	Small molecule interactions	264
+tigr	12.5	Other	129
+tigr	13	Signal transduction	
+tigr	13.1	Two-component systems	699
+tigr	13.2	PTS	700
+tigr	13.3	Other	710
+tigr	14	Cell envelope	
+tigr	14.1	Surface structures	91
+tigr	14.2	Biosynthesis and degradation of murein sacculus and peptidoglycan	89
+tigr	14.3	Biosynthesis and degradation of surface polysaccharides and lipopolysaccharides	90
+tigr	14.4	Other	88
+tigr	15	Cellular processes	
+tigr	15.1	Cell division	93
+tigr	15.2	Chemotaxis and motility	188
+tigr	15.3	Conjugation	702
+tigr	15.4	Detoxification	96
+tigr	15.5	DNA transformation	98
+tigr	15.6	Sporulation and germination	705
+tigr	15.7	Toxin production and resistance	94
+tigr	15.8	Pathogenesis	187
+tigr	15.9	Adaptations to atypical conditions	149
+tigr	15.10	Biosynthesis of natural products	706
+tigr	15.11	Other	92
+tigr	16	Mobile and extrachromosomal element functions	
+tigr	16.1	Plasmid functions	186
+tigr	16.2	Prophage functions	152
+tigr	16.3	Transposon functions	154
+tigr	16.4	Other	708
+tigr	17	Unclassified	
+tigr	17.1	Role category not yet assigned	185
+tigr	18	Unknown function	
+tigr	18.1	Enzymes of unknown specificity	703
+tigr	18.2	General	157
+tigr	19	Hypothetical proteins	
+tigr	19.1	Conserved Hypothetical proteins	156
+tigr	19.2	Conserved Domain proteins	704

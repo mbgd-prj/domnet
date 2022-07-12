@@ -1,0 +1,53 @@
+#default	99.1
+kegg	1	Metabolism	01100
+kegg	1.1	Carbohydrate Metabolism	01110
+kegg	1.2	Energy Metabolism	01120
+kegg	1.3	Lipid Metabolism	01130
+kegg	1.4	Nucleotide Metabolism	01140
+kegg	1.5	Amino Acid Metabolism	01150
+kegg	1.6	Metabolism of Other Amino Acids	01160
+kegg	1.7	Glycan Biosynthesis and Metabolism	01170
+kegg	1.8	Metabolism of Terpenoids and Polyketides	01180
+kegg	1.9	Metabolism of Cofactors and Vitamins	01190
+kegg	1.10	Biosynthesis of Other Secondary Metabolites	01195
+kegg	1.11	Xenobiotics Biodegradation and Metabolism	01196
+kegg	1.12	Enzyme families	
+kegg	2	Genetic Information Processing	01200
+kegg	2.1	Transcription	01210
+kegg	2.2	Translation	01220
+kegg	2.3	Folding, Sorting and Degradation	01230
+kegg	2.4	Replication and Repair	01240
+kegg	2.5	RNA family	
+kegg	3	Environmental Information Processing	01300
+kegg	3.1	Membrane Transport	01310
+kegg	3.2	Signal Transduction	01320
+kegg	3.3	Signaling molecules and interaction	
+kegg	4	Cellular Processes	01400
+kegg	4.1	Cell Motility	01410
+kegg	4.2	Cell Growth and Death	01420
+kegg	4.3	Transport and Catabolism	
+kegg	4.4	Cellular Commiunity	
+kegg	5	Organismal Systems	
+kegg	5.1	Immune System	
+kegg	5.2	Endocrine System	
+kegg	5.3	Circulatory System	
+kegg	5.4	Digestive System	
+kegg	5.5	Excretory System	
+kegg	5.6	Nervous System	
+kegg	5.7	Sensory System	
+kegg	5.8	Development	
+kegg	5.9	Environmental Adaptation	
+kegg	6	Human Diseases	
+kegg	6.1	Cancers	
+kegg	6.2	Immune Diseases	
+kegg	6.3	Neurodegenerative Diseases	
+kegg	6.4	Substance Dependence	
+kegg	6.5	Cardiovascular Diseases	
+kegg	6.6	Endocrine and metabolic Diseases	
+kegg	6.7	Infectious Diseases	
+kegg	6.8	Drug registance	
+kegg	98	Others	
+kegg	98.1	Othres	
+kegg	99	Unknown	
+kegg	99.1	Unknown	
+kegg	99.2	Assigned only other BRITE category	

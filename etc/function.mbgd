@@ -1,0 +1,98 @@
+#default	15.1
+mbgd	1	Amino acid biosynthesis	
+mbgd	1.1	Aromatic amino acid family	
+mbgd	1.2	Aspartate family	
+mbgd	1.3	Branched chain family	
+mbgd	1.4	Glutamate family	
+mbgd	1.5	Pyruvate family	
+mbgd	1.6	Serine family	
+mbgd	1.7	Histidine family	
+mbgd	2	Purines, pyrimidines, nucleosides, and nucleotides	
+mbgd	2.1	2'-Deoxyribonucleotide metabolism	
+mbgd	2.2	Nucleotide and nucleoside interconversions	
+mbgd	2.3	Purine ribonucleotide biosynthesis	
+mbgd	2.4	Pyrimidine ribonucleotide biosynthesis	
+mbgd	2.5	Salvage of nucleosides and nucleotides	
+mbgd	2.6	Sugar-nucleotide biosynthesis and conversions	
+mbgd	3	Fatty acid, phospholipid and sterol metabolism	
+mbgd	3.1	General	
+mbgd	4	Biosynthesis of cofactors, prosthetic groups, and carriers	
+mbgd	4.1	Biotin	
+mbgd	4.2	Folic acid	
+mbgd	4.3	Heme and porphyrin	
+mbgd	4.4	Lipoate	
+mbgd	4.5	Menaquinone and ubiquinone	
+mbgd	4.6	Molybdopterin	
+mbgd	4.7	Pantothenate	
+mbgd	4.8	Pyridoxine	
+mbgd	4.9	Riboflavin	
+mbgd	4.10	Thioredoxin, glutaredoxin, and glutathione	
+mbgd	4.11	Pyridine nucleotides	
+mbgd	4.12	Thiamine	
+mbgd	5	Central intermediary metabolism	
+mbgd	5.1	Amino sugars	
+mbgd	5.2	Degradation of polysaccharides	
+mbgd	5.3	Phosphorus compounds	
+mbgd	5.4	Polyamine biosynthesis	
+mbgd	5.5	Polysaccharides - (cytoplasmic)	
+mbgd	5.6	Sulfur metabolism	
+mbgd	5.7	Others	
+mbgd	6	Energy metabolism	
+mbgd	6.1	Aerobic	
+mbgd	6.2	Amino acids and amines	
+mbgd	6.3	Anaerobic	
+mbgd	6.4	ATP-proton motive force interconversion	
+mbgd	6.5	Electron transport	
+mbgd	6.6	Entner-Doudoroff	
+mbgd	6.7	Fermentation	
+mbgd	6.8	Gluconeogenesis	
+mbgd	6.9	Glycolysis	
+mbgd	6.10	Pentose phosphate pathway	
+mbgd	6.11	Pyruvate dehydrogenase	
+mbgd	6.12	Sugars	
+mbgd	6.13	TCA cycle	
+mbgd	7	Transport and binding proteins	
+mbgd	7.1	Amino acids, peptides and amines	
+mbgd	7.2	Anions	
+mbgd	7.3	Carbohydrates, organic alcohols, and acids	
+mbgd	7.4	Cations	
+mbgd	7.5	Nucleosides, purines and pyrimidines	
+mbgd	7.6	Others	
+mbgd	8	DNA replication, restriction, modification, recombination, and repair	
+mbgd	8.1	Degradation of DNA	
+mbgd	8.2	DNA replication, restriction, modification, recombination, and repair	
+mbgd	9	Transcription	
+mbgd	9.1	Degradation of RNA	
+mbgd	9.2	DNA-dependent RNA polymerase	
+mbgd	10	Translation	
+mbgd	10.1	Amino acyl tRNA synthetases	
+mbgd	10.2	Degradation of proteins, peptides, and glycopeptides	
+mbgd	10.3	Nucleoproteins	
+mbgd	10.4	Protein modification and translation factors	
+mbgd	10.5	Ribosomal proteins: synthesis and modification	
+mbgd	10.6	tRNA modification	
+mbgd	11	Regulatory functions	
+mbgd	11.1	General	
+mbgd	12	Cell envelope	
+mbgd	12.1	Membranes, lipoproteins, and porins	
+mbgd	12.2	Murein sacculus and peptidoglycan	
+mbgd	12.3	Surface polysaccharides, lipopolysaccharides and antigens	
+mbgd	12.4	Surface structures	
+mbgd	13	Cellular processes	
+mbgd	13.1	Cell division	
+mbgd	13.2	Cell killing	
+mbgd	13.3	Chaperones	
+mbgd	13.4	Detoxification	
+mbgd	13.5	Protein and peptide secretion	
+mbgd	13.6	Transformation	
+mbgd	13.7	Motility	
+mbgd	13.8	Sporulation	
+mbgd	14	Other categories	
+mbgd	14.1	Adaptations and atypical conditions	
+mbgd	14.2	Colicin-related functions	
+mbgd	14.3	Drug and analog sensitivity	
+mbgd	14.4	Phage-related functions and prophages	
+mbgd	14.5	Transposon-related functions	
+mbgd	14.6	Plasmid	
+mbgd	15	Hypothetical	
+mbgd	15.1	General	
