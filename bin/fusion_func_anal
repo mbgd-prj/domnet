@@ -25,7 +25,7 @@ my $REF_FREQ = $OPT{r} || die $USAGE;
 
 my $COLUMN = $OPT{n} || 2;
 
-my $FUNC_DEF_FILE = $OPT{f} || "/db/project/MBGD/database/function/$CATEGORY_LC/function.$CATEGORY_LC";
+my $FUNC_DEF_FILE = $OPT{f} || "/home/chiba/github/hchiba1/domnet/etc/function.$CATEGORY_LC";
 my %FUNC_DEF = ();
 my @FUNC = ();
 read_func_def($FUNC_DEF_FILE, \%FUNC_DEF, \@FUNC);

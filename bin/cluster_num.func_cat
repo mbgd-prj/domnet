@@ -57,7 +57,7 @@ for my $db_name ("MBGD", "COG", "KEGG", "TIGR") {
     close(OUT);
 
     my $db_name_lc = lc($db_name);
-    my $func_def_file = "/db/project/MBGD/database/function/$db_name_lc/function.$db_name_lc";
+    my $func_def_file = "/home/chiba/github/hchiba1/domnet/etc/function.$db_name_lc";
     my %func_def = ();
     my @func = ();
     read_func_def($func_def_file, \%func_def, \@func);
