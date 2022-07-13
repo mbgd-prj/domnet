@@ -51,7 +51,7 @@ for my $taxon_node (sort {$a <=> $b} keys %PARENT) {
     my $sample_mean = mean(@sample_value);
 
     if (! defined $sample_mean) {
-	print join("\t", $taxon_node, $sample_mean, "NA", "NA", "NA", "NA"), "\n";
+	print join("\t", $taxon_node, "NA", "NA", "NA", "NA", "NA"), "\n";
     } else {
 	my $vs_sister_log = get_log(\@sample_value, \@sister_value);
 	my $vs_sister_pval = wilcox_test(\@sample_value, \@sister_value);
