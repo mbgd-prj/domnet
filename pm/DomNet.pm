@@ -155,7 +155,7 @@ sub read_values {
     open(FILE, "$file") || die;
     while (<FILE>) {
 	chomp;
-	my @f = split("\t", $_);
+	my @f = split("\t", $_, -1);
 	if (defined($f[$col_i])) {
 	    my ($key, $value) = ($f[0], $f[$col_i]);
 	    if (defined ${$r_value}{$key}) {
