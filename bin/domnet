@@ -402,19 +402,22 @@ sub exec_plot {
 }
 
 sub exec_and_save {
-    my ($command, $out_file) = @_;
+    my ($command, $out_file, $force_output) = @_;
 
-    if (!-s $out_file) {
-        if ($OPT{v}) {
-            print "\$ $command > $out_file\n";
-        } else {
-            print "Creating $out_file\n";
-        }
-        system "$command > $out_file";
-        if (! -s $out_file) {
-            print "$out_file is empty.\n";
-            exit(1);
-        }
+    if (! $force_output and -s $out_file) {
+        return;
+    }
+
+    if ($OPT{v}) {
+        print "\$ $command > $out_file\n";
+    } else {
+        print "Creating $out_file\n";
+    }
+    system "$command > $out_file";
+
+    if (! -s $out_file) {
+        print "$out_file is empty.\n";
+        exit(1);
     }
 }
 
