@@ -229,8 +229,7 @@ if (! -e 'network/filter/node/dist.density') {
     exec_command("domnet_dist_density -d network/filter/node/dist.density network/filter/node/taxid_node.degree");
 }
 if (! -e 'network/filter/node/dist.gradient') {
-    mkdir_with_check('network/filter/node/dist.gradient');
-    exec_command('for i in $(cat network/filter/node/taxid_node.degree | cut 1); do cat network/filter/node/dist.density/$i.* | domnet_dist_gradient.R | cut -f1 > network/filter/node/dist.gradient/$i; done');
+    exec_command('domnet_dist_gradients.py -i network/filter/node/dist.density -o network/filter/node/dist.gradient');
 }
 exec_and_save('grep . network/filter/node/dist.gradient/* | grep_gradient.pl', 'network/filter/node/dist.gradients');
 exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node/dist.gradients | grep -v NOT_FOUND', 'network/filter/node/sp_taxid_gradient');
@@ -251,8 +250,7 @@ if (! -e 'network/filter/node_edge/dist.density') {
     exec_command("domnet_dist_density -d network/filter/node_edge/dist.density network/filter/node_edge/taxid_node_edge.degree");
 }
 if (! -e 'network/filter/node_edge/dist.gradient') {
-    mkdir_with_check('network/filter/node_edge/dist.gradient');
-    exec_command('for i in $(cat network/filter/node_edge/taxid_node_edge.degree | cut 1); do cat network/filter/node_edge/dist.density/$i.* | domnet_dist_gradient.R | cut -f1 > network/filter/node_edge/dist.gradient/$i; done');
+    exec_command('domnet_dist_gradients.py -i network/filter/node_edge/dist.density -o network/filter/node_edge/dist.gradient');
 }
 exec_and_save('grep . network/filter/node_edge/dist.gradient/* | grep_gradient.pl | sed "s/	/z/" | sort | sed "s/z/	/"', 'network/filter/node_edge/dist.gradients');
 exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node_edge/dist.gradients | grep -v NOT_FOUND', 'network/filter/node_edge/sp_taxid_gradient');
