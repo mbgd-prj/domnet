@@ -69,12 +69,10 @@ sub get_ancestor {
 
     my @mat = ();
     my @org = split(",", $orgs);
-    for (my $i=0; $i<@org; $i++) {
-        my $ancestors = $SP_ANCESTORS{$org[$i]};
+    for my $org (@org) {
+        my $ancestors = $SP_ANCESTORS{$org};
         my @f = split("\t", $ancestors);
-	for (my $j=0; $j<@f; $j++) {
-	    $mat[$i][$j] = $f[$j];
-	}
+        push @mat, \@f,
     }
 
     my $ancestor = "";
