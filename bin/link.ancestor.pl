@@ -43,9 +43,9 @@ sub analyze_orgs {
     }
 
     my $n_orgs = split(",", $orgs);
-    my $ancestor = get_ancestor($orgs);
+    my $last_common_ancestor = last_common_ancestor($orgs);
 
-    if ($ancestor =~ /^(\d+):(\S+)$/) {
+    if ($last_common_ancestor =~ /^(\d+):(\S+)$/) {
 	my ($taxid, $rank) = ($1, $2);
 	if ($DESCENDENTS{$taxid} and $NAME{$taxid}) {
 	    my @descendents = split(",", $DESCENDENTS{$taxid});
@@ -60,34 +60,34 @@ sub analyze_orgs {
 	    die;
 	}
     } else {
-	die "$orgs $ancestor";
+	die "$orgs $last_common_ancestor";
     }
 }
 
-sub get_ancestor {
+sub last_common_ancestor {
     my ($orgs) = @_;
 
-    my @mat = ();
+    my @org_ancestors = ();
     my @org = split(",", $orgs);
     for my $org (@org) {
         my $ancestors = $SP_ANCESTORS{$org};
-        my @f = split("\t", $ancestors);
-        push @mat, \@f,
+        my @ancestor = split("\t", $ancestors);
+        push @org_ancestors, \@ancestor,
     }
 
-    my $ancestor = "";
+    my $common_ancestor = "";
 
     my $j = 0;
     while (1) {
-	for (my $i=0; $i<@mat; $i++) {
-	    if (! defined $mat[$i][$j]) {
-		return $ancestor;
+	for (my $i=0; $i<@org_ancestors; $i++) {
+	    if (! defined $org_ancestors[$i][$j]) {
+		return $common_ancestor;
 	    }
-	    if ($mat[0][$j] ne $mat[$i][$j]) {
-		return $ancestor;
+	    if ($org_ancestors[0][$j] ne $org_ancestors[$i][$j]) {
+		return $common_ancestor;
 	    }
 	}
-	$ancestor = $mat[0][$j];
+	$common_ancestor = $org_ancestors[0][$j];
 	$j ++;
     }
 
