@@ -228,7 +228,7 @@ exec_and_save("cat network/filter/node/taxid_node.degree | degree_dist", "networ
 exec_command("domnet_dist_density -d network/filter/node/dist.density network/filter/node/taxid_node.degree") if (! -e 'network/filter/node/dist.density');
 exec_command('domnet_dist_gradients.py -i network/filter/node/dist.density -o network/filter/node/dist.gradient') if (! -e 'network/filter/node/dist.gradient');
 exec_and_save('grep . network/filter/node/dist.gradient/* | grep_gradient.pl', 'network/filter/node/dist.gradients');
-exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node/dist.gradients | grep -v NOT_FOUND', 'network/filter/node/sp_taxid_gradient');
+exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node/dist.gradients', 'network/filter/node/sp_taxid_gradient');
 exec_and_save('cat additional_info/sp.taxon_summary | table basic_info/sp.gene_num | table network/filter/node/sp_taxid_gradient', 'network/filter/node/sp_taxid_gradient.summary.tsv');
 exec_command('cat network/filter/node/taxid_node.degree | fit_powerlaw.py -o network/filter/node/taxid_node.degree.powerlaw') if (!-s 'network/filter/node/taxid_node.degree.powerlaw');
 exec_and_save('cat additional_info/sp.taxid | table basic_info/sp.gene_num | table -k 2 network/filter/node/taxid_node.degree.powerlaw', 'network/filter/node/taxid_node.degree.powerlaw.genenum');
@@ -245,7 +245,7 @@ exec_and_save("cat network/filter/node_edge/taxid_node_edge.degree | degree_dist
 exec_command("domnet_dist_density -d network/filter/node_edge/dist.density network/filter/node_edge/taxid_node_edge.degree") if (! -e 'network/filter/node_edge/dist.density');
 exec_command('domnet_dist_gradients.py -i network/filter/node_edge/dist.density -o network/filter/node_edge/dist.gradient') if (! -e 'network/filter/node_edge/dist.gradient');
 exec_and_save('grep . network/filter/node_edge/dist.gradient/* | grep_gradient.pl | sed "s/	/z/" | sort | sed "s/z/	/"', 'network/filter/node_edge/dist.gradients');
-exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node_edge/dist.gradients | grep -v NOT_FOUND', 'network/filter/node_edge/sp_taxid_gradient');
+exec_and_save('cat additional_info/sp.taxid | table -k 2 network/filter/node_edge/dist.gradients', 'network/filter/node_edge/sp_taxid_gradient');
 exec_and_save('cat additional_info/sp.taxon_summary | table basic_info/sp.gene_num | table network/filter/node_edge/sp_taxid_gradient', 'network/filter/node_edge/sp_taxid_gradient.summary.tsv');
 exec_command('cat network/filter/node_edge/taxid_node_edge.degree | fit_powerlaw.py -o network/filter/node_edge/taxid_node_edge.degree.powerlaw 2> network/filter/node_edge/taxid_node_edge.degree.powerlaw.err') if (!-s 'network/filter/node_edge/taxid_node_edge.degree.powerlaw');
 # exec_and_save('cat additional_info/sp.taxid | table basic_info/sp.gene_num | table -k 2 network/filter/node_edge/taxid_node_edge.degree.powerlaw', 'network/filter/node_edge/taxid_node_edge.degree.powerlaw.genenum');
