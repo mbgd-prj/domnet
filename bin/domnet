@@ -280,8 +280,8 @@ if (! -s $SP_FUSION_SUMMARY) {
         push @files, ("network/sp.same_func.MBGD", "network/sp.same_func.COG", "network/sp.same_func.KEGG", "network/sp.same_func.TIGR");
     }
     exec_and_save("table_summary @files", $SP_FUSION_SUMMARY);
+    append_header($SP_FUSION_SUMMARY, "${SP_FUSION_SUMMARY}.txt", @HEADER);
 }
-append_header($SP_FUSION_SUMMARY, "${SP_FUSION_SUMMARY}.txt", @HEADER);
 
 my $CLUSTER_SUMMARY = "network/cluster.summary";
 exec_and_save("table_summary -N 0 $CLUSTER_SIZE $CLUSTER_SP_NUM $CLUSTER_PARALOG_NUM $CLUSTER_DEGREE $CLUSTER_DESCR $CLUSTER_FUNCTIONS", $CLUSTER_SUMMARY);
