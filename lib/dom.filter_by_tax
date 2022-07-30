@@ -1,0 +1,59 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat dom_file | $PROGRAM taxid
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+my $TAX_SPS = "additional_info/taxid_nodes/taxid_node.descendents";
+
+if (!@ARGV or -t) {
+    print STDERR $USAGE;
+    exit 1;
+}
+
+my ($TAXID) = @ARGV;
+
+my %SP = ();
+my $SPS = get_sps($TAXID);
+my @SP = split(",", $SPS);
+for my $sp (@SP) {
+    $SP{$sp} = 1;
+}
+
+while (<STDIN>) {
+    chomp;
+    my @f = split;
+    my $sp_gene = $f[1];
+    my ($sp, $gene) = split(":", $sp_gene);
+    if ($SP{$sp}) {
+        print "$_\n";
+    }
+}
+
+################################################################################
+### Function ###################################################################
+################################################################################
+sub get_sps {
+    my ($taxid) = @_;
+
+    open(TAX_SPS, $TAX_SPS) || die;
+    while (<TAX_SPS>) {
+        chomp;
+        my @f = split(/\t/, $_);
+        if (@f != 2) {
+            die;
+        }
+        if ($f[0] eq $TAXID) {
+            close(TAX_SPS);
+            return $f[1];
+        }
+    }
+    close(TAX_SPS);
+    return "";
+}
