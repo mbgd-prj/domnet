@@ -13,6 +13,10 @@ getopts('', \%OPT);
 my $LINK = "network/link.all";
 my $CLUSTER_SP = "basic_info/cluster.sp";
 my $TAXON_NODE_DESCENDENTS = "additional_info/taxid_nodes/taxid_node.descendents";
+my $CLUSTER_SP_NUM = "basic_info/cluster.sp_num";
+my $CLUSTER_PROK_EUK = "additional_info/cluster.prok_euk";
+my $CLUSTER_FUNCTIONS = "basic_info/cluster.functions";
+my $CLUSTER_DESCR = "basic_info/cluster.descr";
 my ($TAX1, $TAX2) = @ARGV;
 
 my %CLUSTER_SP = ();
@@ -46,6 +50,7 @@ close(TAXON_NODE_DESCENDENTS);
 
 STDOUT->autoflush;
 
+my %CLUSTER = ();
 my @header = ("cluster1", "cluster2", "edge_type", 
               # "edge_name", 
               "edge_n_sp", "nodes_in_taxon");
@@ -61,9 +66,103 @@ while (<LINK>) {
         print join("\t", $cluster1, $cluster2, "CLUSTER", 
                    # "${cluster1}-${cluster2}", 
                    $n_sp, $link_type), "\n";
+        $CLUSTER{$cluster1} = 1;
+        $CLUSTER{$cluster2} = 1;
     }
 }
 close(LINK);
+
+### Read files for nodes
+my %SP_NUM = ();
+open(CLUSTER_SP_NUM, "$CLUSTER_SP_NUM") || die $USAGE;
+while (<CLUSTER_SP_NUM>) {
+    chomp;
+    my @f = split;
+    if (@f != 2) {
+        die;
+    }
+    my $cluster = $f[0];
+    my $sp_num = $f[1];
+    $SP_NUM{$cluster} = $sp_num;
+}
+close(CLUSTER_SP_NUM);
+
+my %PROK_EUK = ();
+open(CLUSTER_PROK_EUK, "$CLUSTER_PROK_EUK") || die $USAGE;
+while (<CLUSTER_PROK_EUK>) {
+    chomp;
+    my ($cluster, $prok_euk) = split;
+    $PROK_EUK{$cluster} = $prok_euk;
+}
+close(CLUSTER_PROK_EUK);
+
+my %FUNCTION = ();
+open(CLUSTER_FUNCTIONS, "$CLUSTER_FUNCTIONS") || die;
+while (<CLUSTER_FUNCTIONS>) {
+    chomp;
+    my @f = split("\t", $_, -1);
+    if (@f != 5) {
+        die;
+    }
+    my $cluster = $f[0];
+    my $cog = $f[2];
+    $FUNCTION{$cluster} = $cog;
+}
+close(CLUSTER_FUNCTIONS);
+
+my %DESCRIPTION = ();
+my %FULL_DESCR = ();
+my $LENGTH = $OPT{l} || 20;
+open(DESCRIPTION, "$CLUSTER_DESCR") || die $USAGE;
+while (<DESCRIPTION>) {
+    chomp;
+    my ($cluster, $description) = split("\t", $_);
+    # if (length($cluster) + length($description) + 2 > $LENGTH) {
+    #     $DESCRIPTION{$cluster} = "$cluster(" . substr($description, 0, $LENGTH - length($cluster) - 2 - 2) . "..)";
+    # } else {
+    #     $DESCRIPTION{$cluster}= "$cluster($description)";
+    # }
+    $FULL_DESCR{$cluster} = $description;
+    if (length($description) > $LENGTH) {
+        # $DESCRIPTION{$cluster} = substr($description, 0, $LENGTH - 2) . "..";
+        $DESCRIPTION{$cluster} = substr($description, 0, $LENGTH);
+    } else {
+        $DESCRIPTION{$cluster}= $description;
+    }
+    $DESCRIPTION{$cluster} = $FUNCTION{$cluster} . " " . $DESCRIPTION{$cluster};
+}
+close(DESCRIPTION);
+
+my @HEADER = ();
+@HEADER = "cluster";
+push @HEADER, "cluster_type";
+push @HEADER, "cluster_n_sp";
+push @HEADER, "cluster_prok_euk";
+push @HEADER, "func_cog";
+push @HEADER, "cluster_descr";
+push @HEADER, "cluster_full_descr";
+print STDERR join("\t", @HEADER), "\n";
+for my $cluster (sort keys %CLUSTER) {
+    my $cluster_id;
+    my $cluster_type;
+    if ($cluster =~ /^(\S+)\.\d+$/) {
+	$cluster_id = $1;
+	$cluster_type = "BREAK";
+    } elsif ($cluster =~ /^\S+$/) {
+	$cluster_id = $cluster;
+	$cluster_type = "CLUSTER";
+    } else {
+	die $cluster;
+    }
+    my @out = ($cluster);
+    push @out, $cluster_type;
+    push @out, $SP_NUM{$cluster_id};
+    push @out, $PROK_EUK{$cluster_id};
+    push @out, $FUNCTION{$cluster_id};
+    push @out, $DESCRIPTION{$cluster_id};
+    push @out, $FULL_DESCR{$cluster_id};
+    print STDERR join("\t", @out), "\n";
+}
 
 ################################################################################
 ### Function ###################################################################
