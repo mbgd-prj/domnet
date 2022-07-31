@@ -4,7 +4,7 @@ use File::Basename;
 use Getopt::Std;
 my $PROGRAM = basename $0;
 my $USAGE=
-"Usage: $PROGRAM TAX1 TAX2 COG
+"Usage: $PROGRAM TAX1 TAX2 [COG]
 ";
 
 my %OPT;
@@ -18,6 +18,9 @@ my $CLUSTER_PROK_EUK = "additional_info/cluster.prok_euk";
 my $CLUSTER_FUNCTIONS = "basic_info/cluster.functions";
 my $CLUSTER_DESCR = "basic_info/cluster.descr";
 
+if (@ARGV < 2 || @ARGV > 3) {
+    die $USAGE;
+}
 my ($TAX1, $TAX2, $COG) = @ARGV;
 
 my $LINK_OUT = "network/link.tax${TAX1}_${TAX2}";
@@ -73,14 +76,12 @@ while (<LINK>) {
     my @func_cogs = split("-", $func_cogs);
     my ($cluster1, $cluster2) = split("-", $link);
     my $link_type = get_link_type($cluster1, $cluster2);
-    if (($func_cogs[0] && $func_cogs[0] eq $COG) or ($func_cogs[1] && $func_cogs[1] eq $COG)) {
-    if ($link_type) {
+    if ($link_type && filter_by_cog($func_cogs)) {
         print LINK_OUT join("\t", $cluster1, $cluster2, "CLUSTER",
                    "${cluster1}-${cluster2}",
                    $n_sp, $link_type), "\n";
         $CLUSTER{$cluster1} = 1;
         $CLUSTER{$cluster2} = 1;
-    }
     }
 }
 close(LINK);
@@ -224,4 +225,20 @@ sub cluster_includes_taxon {
     }
 
     return 0;
+}
+
+sub filter_by_cog {
+    my ($func_cogs) = @_;
+
+    if ($COG) {
+        my @func_cogs = split("-", $func_cogs);
+        if (($func_cogs[0] && $func_cogs[0] eq $COG) or
+            ($func_cogs[1] && $func_cogs[1] eq $COG)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    } else {
+        return 1;
+    }
 }
