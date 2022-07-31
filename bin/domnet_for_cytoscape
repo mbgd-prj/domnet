@@ -4,7 +4,7 @@ use File::Basename;
 use Getopt::Std;
 my $PROGRAM = basename $0;
 my $USAGE=
-"Usage: $PROGRAM TAX1 TAX2
+"Usage: $PROGRAM TAX1 TAX2 COG
 ";
 
 my %OPT;
@@ -17,7 +17,7 @@ my $CLUSTER_SP_NUM = "basic_info/cluster.sp_num";
 my $CLUSTER_PROK_EUK = "additional_info/cluster.prok_euk";
 my $CLUSTER_FUNCTIONS = "basic_info/cluster.functions";
 my $CLUSTER_DESCR = "basic_info/cluster.descr";
-my ($TAX1, $TAX2) = @ARGV;
+my ($TAX1, $TAX2, $COG) = @ARGV;
 
 my %CLUSTER_SP = ();
 open(CLUSTER_SP, "$CLUSTER_SP") || die;
@@ -52,7 +52,7 @@ STDOUT->autoflush;
 
 my %CLUSTER = ();
 my @header = ("cluster1", "cluster2", "edge_type", 
-              # "edge_name", 
+              "edge_name",
               "edge_n_sp", "nodes_in_taxon");
 print join("\t", @header), "\n";
 open(LINK, "$LINK") || die "$!";
@@ -60,14 +60,18 @@ while (<LINK>) {
     chomp;
     my @f = split("\t", $_);
     my ($link, $n_sp) = @f;
+    my $func_cogs = $f[8];
+    my @func_cogs = split("-", $func_cogs);
     my ($cluster1, $cluster2) = split("-", $link);
     my $link_type = get_link_type($cluster1, $cluster2);
+    if (($func_cogs[0] && $func_cogs[0] eq $COG) or ($func_cogs[1] && $func_cogs[1] eq $COG)) {
     if ($link_type) {
         print join("\t", $cluster1, $cluster2, "CLUSTER", 
-                   # "${cluster1}-${cluster2}", 
+                   "${cluster1}-${cluster2}",
                    $n_sp, $link_type), "\n";
         $CLUSTER{$cluster1} = 1;
         $CLUSTER{$cluster2} = 1;
+    }
     }
 }
 close(LINK);
@@ -178,11 +182,11 @@ sub get_link_type {
     if ($includes1 && $includes2) {
         return "both";
     } elsif ($includes1) {
-        return "tax2";
-        # return "tax$TAX1";
+        # return "tax2";
+        return "tax$TAX1";
     } elsif ($includes2) {
-        return "tax1";
-        # return "tax$TAX2";
+        # return "tax1";
+        return "tax$TAX2";
     }
 }
 
