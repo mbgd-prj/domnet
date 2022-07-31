@@ -141,6 +141,7 @@ push @HEADER, "cluster_prok_euk";
 push @HEADER, "func_cog";
 push @HEADER, "cluster_descr";
 push @HEADER, "cluster_full_descr";
+push @HEADER, "node_in_taxon";
 print STDERR join("\t", @HEADER), "\n";
 for my $cluster (sort keys %CLUSTER) {
     my $cluster_id;
@@ -161,6 +162,7 @@ for my $cluster (sort keys %CLUSTER) {
     push @out, $FUNCTION{$cluster_id};
     push @out, $DESCRIPTION{$cluster_id};
     push @out, $FULL_DESCR{$cluster_id};
+    push @out, get_node_type($cluster);
     print STDERR join("\t", @out), "\n";
 }
 
@@ -181,6 +183,22 @@ sub get_link_type {
     } elsif ($includes2) {
         return "tax1";
         # return "tax$TAX2";
+    }
+}
+
+sub get_node_type {
+    my ($cluster) = @_;
+
+    my $includes1 = cluster_includes_taxon($cluster, $TAX1);
+    my $includes2 = cluster_includes_taxon($cluster, $TAX2);
+    if ($includes1 && $includes2) {
+        return "both";
+    } elsif ($includes1) {
+        return "tax$TAX1";
+    } elsif ($includes2) {
+        return "tax$TAX2";
+    } else {
+        return "none";
     }
 }
 
