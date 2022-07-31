@@ -10,21 +10,28 @@ my $USAGE=
 my %OPT;
 getopts('', \%OPT);
 
-my $LINK = "network/link.all";
-my $CLUSTER_SP = "basic_info/cluster.sp";
-my $TAXON_NODE_DESCENDENTS = "additional_info/taxid_nodes/taxid_node.descendents";
-my $CLUSTER_SP_NUM = "basic_info/cluster.sp_num";
-my $CLUSTER_PROK_EUK = "additional_info/cluster.prok_euk";
-my $CLUSTER_FUNCTIONS = "basic_info/cluster.functions";
-my $CLUSTER_DESCR = "basic_info/cluster.descr";
+my $DIR = "";
+my $PARENT = "../";
+if (-f "network/link.all") {
+    $DIR = "network/";
+    $PARENT = "";
+}
+
+my $LINK = "${DIR}link.all";
+my $CLUSTER_SP = "${PARENT}basic_info/cluster.sp";
+my $TAXON_NODE_DESCENDENTS = "${PARENT}additional_info/taxid_nodes/taxid_node.descendents";
+my $CLUSTER_SP_NUM = "${PARENT}basic_info/cluster.sp_num";
+my $CLUSTER_PROK_EUK = "${PARENT}additional_info/cluster.prok_euk";
+my $CLUSTER_FUNCTIONS = "${PARENT}basic_info/cluster.functions";
+my $CLUSTER_DESCR = "${PARENT}basic_info/cluster.descr";
 
 if (@ARGV < 2 || @ARGV > 3) {
     die $USAGE;
 }
 my ($TAX1, $TAX2, $COG) = @ARGV;
 
-my $LINK_OUT = "network/link.tax${TAX1}_${TAX2}";
-my $NODE_OUT = "network/node.tax${TAX1}_${TAX2}";
+my $LINK_OUT = "${DIR}link.tax${TAX1}_${TAX2}";
+my $NODE_OUT = "${DIR}node.tax${TAX1}_${TAX2}";
 if ($COG) {
     $LINK_OUT .= "_cog${COG}";
     $NODE_OUT .= "_cog${COG}";
