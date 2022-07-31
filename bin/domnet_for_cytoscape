@@ -59,10 +59,11 @@ close(TAXON_NODE_DESCENDENTS);
 STDOUT->autoflush;
 open(LINK_OUT, ">$LINK_OUT") || die "$!";
 my %CLUSTER = ();
-my @header = ("cluster1", "cluster2", "edge_type", 
-              "edge_name",
-              "edge_n_sp", "nodes_in_taxon");
-print LINK_OUT join("\t", @header), "\n";
+print LINK_OUT join("\t", "cluster1", "cluster2", "edge_type",
+                    "edge_name",
+                    "edge_n_sp",
+                    "nodes_in_taxon"
+    ), "\n";
 open(LINK, "$LINK") || die "$!";
 while (<LINK>) {
     chomp;
@@ -147,16 +148,11 @@ while (<DESCRIPTION>) {
 close(DESCRIPTION);
 
 open(NODE_OUT, ">$NODE_OUT") || die "$!";
-my @HEADER = ();
-@HEADER = "cluster";
-push @HEADER, "cluster_type";
-push @HEADER, "cluster_n_sp";
-push @HEADER, "cluster_prok_euk";
-push @HEADER, "func_cog";
-push @HEADER, "cluster_descr";
-push @HEADER, "cluster_full_descr";
-push @HEADER, "node_in_taxon";
-print NODE_OUT join("\t", @HEADER), "\n";
+print NODE_OUT join("\t", "cluster", "cluster_type",
+                    "cluster_n_sp", "cluster_prok_euk", "func_cog",
+                    "cluster_descr", "cluster_full_descr",
+                    "node_in_taxon"
+    ), "\n";
 for my $cluster (sort keys %CLUSTER) {
     my $cluster_id;
     my $cluster_type;
