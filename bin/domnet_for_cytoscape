@@ -17,7 +17,15 @@ my $CLUSTER_SP_NUM = "basic_info/cluster.sp_num";
 my $CLUSTER_PROK_EUK = "additional_info/cluster.prok_euk";
 my $CLUSTER_FUNCTIONS = "basic_info/cluster.functions";
 my $CLUSTER_DESCR = "basic_info/cluster.descr";
+
 my ($TAX1, $TAX2, $COG) = @ARGV;
+
+my $LINK_OUT = "network/link.tax${TAX1}_${TAX2}";
+my $NODE_OUT = "network/node.tax${TAX1}_${TAX2}";
+if ($COG) {
+    $LINK_OUT .= "_cog${COG}";
+    $NODE_OUT .= "_cog${COG}";
+}
 
 my %CLUSTER_SP = ();
 open(CLUSTER_SP, "$CLUSTER_SP") || die;
@@ -49,12 +57,12 @@ while (<TAXON_NODE_DESCENDENTS>) {
 close(TAXON_NODE_DESCENDENTS);
 
 STDOUT->autoflush;
-
+open(LINK_OUT, ">$LINK_OUT") || die "$!";
 my %CLUSTER = ();
 my @header = ("cluster1", "cluster2", "edge_type", 
               "edge_name",
               "edge_n_sp", "nodes_in_taxon");
-print join("\t", @header), "\n";
+print LINK_OUT join("\t", @header), "\n";
 open(LINK, "$LINK") || die "$!";
 while (<LINK>) {
     chomp;
@@ -66,7 +74,7 @@ while (<LINK>) {
     my $link_type = get_link_type($cluster1, $cluster2);
     if (($func_cogs[0] && $func_cogs[0] eq $COG) or ($func_cogs[1] && $func_cogs[1] eq $COG)) {
     if ($link_type) {
-        print join("\t", $cluster1, $cluster2, "CLUSTER", 
+        print LINK_OUT join("\t", $cluster1, $cluster2, "CLUSTER",
                    "${cluster1}-${cluster2}",
                    $n_sp, $link_type), "\n";
         $CLUSTER{$cluster1} = 1;
@@ -75,6 +83,7 @@ while (<LINK>) {
     }
 }
 close(LINK);
+close(LINK_OUT);
 
 ### Read files for nodes
 my %SP_NUM = ();
@@ -137,6 +146,7 @@ while (<DESCRIPTION>) {
 }
 close(DESCRIPTION);
 
+open(NODE_OUT, ">$NODE_OUT") || die "$!";
 my @HEADER = ();
 @HEADER = "cluster";
 push @HEADER, "cluster_type";
@@ -146,7 +156,7 @@ push @HEADER, "func_cog";
 push @HEADER, "cluster_descr";
 push @HEADER, "cluster_full_descr";
 push @HEADER, "node_in_taxon";
-print STDERR join("\t", @HEADER), "\n";
+print NODE_OUT join("\t", @HEADER), "\n";
 for my $cluster (sort keys %CLUSTER) {
     my $cluster_id;
     my $cluster_type;
@@ -167,8 +177,9 @@ for my $cluster (sort keys %CLUSTER) {
     push @out, $DESCRIPTION{$cluster_id};
     push @out, $FULL_DESCR{$cluster_id};
     push @out, get_node_type($cluster);
-    print STDERR join("\t", @out), "\n";
+    print NODE_OUT join("\t", @out), "\n";
 }
+close(NODE_OUT);
 
 ################################################################################
 ### Function ###################################################################
