@@ -20,6 +20,7 @@ if (-f "network/link.all") {
 my $LINK = "${DIR}link.all";
 my $CLUSTER_SP = "${PARENT}basic_info/cluster.sp";
 my $TAXON_NODE_DESCENDENTS = "${PARENT}additional_info/taxid_nodes/taxid_node.descendents";
+my $TAXON_NAME = "${PARENT}additional_info/taxid_nodes/taxid_node.names";
 my $CLUSTER_SP_NUM = "${PARENT}basic_info/cluster.sp_num";
 my $CLUSTER_PROK_EUK = "${PARENT}additional_info/cluster.prok_euk";
 my $CLUSTER_FUNCTIONS = "${PARENT}basic_info/cluster.functions";
@@ -36,6 +37,11 @@ if ($COG) {
     $LINK_OUT .= "_cog${COG}";
     $NODE_OUT .= "_cog${COG}";
 }
+
+my %TAX_NAME;
+read_hash_value($TAXON_NAME, \%TAX_NAME);
+print $TAX_NAME{$TAX} || die;
+print "\n";
 
 my %CLUSTER_SP = ();
 read_hash_key($CLUSTER_SP, \%CLUSTER_SP);
@@ -238,7 +244,7 @@ sub read_hash_value {
     open(TSV, "$tsv") || die;
     while (<TSV>) {
         chomp;
-        my @f = split;
+        my @f = split("\t", $_, -1);
         if (@f != 2) {
             die;
         }
