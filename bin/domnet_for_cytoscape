@@ -38,33 +38,10 @@ if ($COG) {
 }
 
 my %CLUSTER_SP = ();
-open(CLUSTER_SP, "$CLUSTER_SP") || die;
-while (<CLUSTER_SP>) {
-    chomp;
-    my @f = split;
-    if (@f != 2) {
-        die;
-    }
-    my ($cluster, $sp) = @f;
-    $CLUSTER_SP{$cluster}{$sp} = 1;
-}
-close(CLUSTER_SP);
+read_hash_key($CLUSTER_SP, \%CLUSTER_SP);
 
 my %TAX_INCLUDES_SP;
-open(TAXON_NODE_DESCENDENTS, $TAXON_NODE_DESCENDENTS) || die;
-while (<TAXON_NODE_DESCENDENTS>) {
-    chomp;
-    my @f = split;
-    if (@f != 2) {
-        die;
-    }
-    my ($taxid, $sps) = @f;
-    my @sp = split(/,/, $sps);
-    for my $sp (@sp) {
-        $TAX_INCLUDES_SP{$taxid}{$sp} = 1;
-    }
-}
-close(TAXON_NODE_DESCENDENTS);
+read_hash_keys($TAXON_NODE_DESCENDENTS, \%TAX_INCLUDES_SP);
 
 STDOUT->autoflush;
 open(LINK_OUT, ">$LINK_OUT") || die "$!";
@@ -96,41 +73,13 @@ close(LINK_OUT);
 
 ### Read files for nodes
 my %SP_NUM = ();
-open(CLUSTER_SP_NUM, "$CLUSTER_SP_NUM") || die $USAGE;
-while (<CLUSTER_SP_NUM>) {
-    chomp;
-    my @f = split;
-    if (@f != 2) {
-        die;
-    }
-    my $cluster = $f[0];
-    my $sp_num = $f[1];
-    $SP_NUM{$cluster} = $sp_num;
-}
-close(CLUSTER_SP_NUM);
+read_hash_value($CLUSTER_SP_NUM, \%SP_NUM);
 
 my %PROK_EUK = ();
-open(CLUSTER_PROK_EUK, "$CLUSTER_PROK_EUK") || die $USAGE;
-while (<CLUSTER_PROK_EUK>) {
-    chomp;
-    my ($cluster, $prok_euk) = split;
-    $PROK_EUK{$cluster} = $prok_euk;
-}
-close(CLUSTER_PROK_EUK);
+read_without_check($CLUSTER_PROK_EUK, \%PROK_EUK);
 
 my %FUNCTION = ();
-open(CLUSTER_FUNCTIONS, "$CLUSTER_FUNCTIONS") || die;
-while (<CLUSTER_FUNCTIONS>) {
-    chomp;
-    my @f = split("\t", $_, -1);
-    if (@f != 5) {
-        die;
-    }
-    my $cluster = $f[0];
-    my $cog = $f[2];
-    $FUNCTION{$cluster} = $cog;
-}
-close(CLUSTER_FUNCTIONS);
+read_cog_function($CLUSTER_FUNCTIONS, \%FUNCTION);
 
 my %DESCRIPTION = ();
 my %FULL_DESCR = ();
@@ -248,4 +197,79 @@ sub filter_by_cog {
     } else {
         return 1;
     }
+}
+
+sub read_hash_key {
+    my ($tsv, $r_hash) = @_;
+
+    open(TSV, "$tsv") || die;
+    while (<TSV>) {
+        chomp;
+        my @f = split;
+        if (@f != 2) {
+            die;
+        }
+        ${$r_hash}{$f[0]}{$f[1]} = 1;
+    }
+    close(TSV);
+}
+
+sub read_hash_keys {
+    my ($tsv, $r_hash) = @_;
+
+    open(TSV, "$tsv") || die;
+    while (<TSV>) {
+        chomp;
+        my @f = split;
+        if (@f != 2) {
+            die;
+        }
+        my @val = split(/,/, $f[1]);
+        for my $val (@val) {
+            ${$r_hash}{$f[0]}{$val} = 1;
+        }
+    }
+    close(TSV);
+}
+
+sub read_without_check {
+    my ($tsv, $r_hash) = @_;
+
+    open(TSV, "$tsv") || die;
+    while (<TSV>) {
+        chomp;
+        my @f = split;
+        ${$r_hash}{$f[0]} = $f[1];
+    }
+    close(TSV);
+}
+
+sub read_hash_value {
+    my ($tsv, $r_hash) = @_;
+
+    open(TSV, "$tsv") || die;
+    while (<TSV>) {
+        chomp;
+        my @f = split;
+        if (@f != 2) {
+            die;
+        }
+        ${$r_hash}{$f[0]} = $f[1];
+    }
+    close(TSV);
+}
+
+sub read_cog_function {
+    my ($tsv, $r_hash) = @_;
+
+    open(TSV, "$tsv") || die;
+    while (<TSV>) {
+        chomp;
+        my @f = split("\t", $_, -1);
+        if (@f != 5) {
+            die;
+        }
+        ${$r_hash}{$f[0]} = $f[2];
+    }
+    close(TSV);
 }
