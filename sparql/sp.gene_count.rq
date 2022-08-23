@@ -1,0 +1,11 @@
+#!/usr/bin/env spang2
+# @endpoint mbgd2016
+# @option --time -as
+# @input (org:eco) (org:bsu)
+
+SELECT ?org (SUM(?count) AS ?sum)
+WHERE {
+  VALUES (?org) { ${INPUT} }
+  ?org mbgd:nucSeq ?seq .
+  ?seq mbgd:geneCount ?count .
+}

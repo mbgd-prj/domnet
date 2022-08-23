@@ -1,0 +1,15 @@
+#!/usr/bin/env spang2
+# @endpoint mbgd2016
+# @option -as --time
+# @input (org:eco) (org:bsu)
+
+# SELECT ?org (COUNT(DISTINCT ?gene) AS ?count)
+SELECT ?org (COUNT(?gene) AS ?count)
+# SELECT ?org_id (COUNT(DISTINCT ?gene) AS ?count)
+WHERE {
+  ?gene a mbgd:CDS ;
+        ?p ?org .
+  VALUES (?org) { ${INPUT} }
+  # BIND(STRAFTER(str(?org), "organism/") AS ?org_id)
+}
+# ORDER BY ?org

@@ -1,0 +1,13 @@
+#!/usr/bin/env spang2
+# @endpoint mbgd2016
+# @option --time -as
+# @input (org:eco) (org:bsu)
+
+SELECT ?org (SUM(?len) AS ?sum)
+# SELECT ?org ?seq_label ?len
+WHERE {
+  VALUES (?org) { ${INPUT} }
+  ?org mbgd:nucSeq ?seq .
+  ?seq mbgd:nucLength ?len .
+  # ?seq rdfs:label ?seq_label .
+}
