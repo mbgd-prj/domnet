@@ -1,20 +1,21 @@
 #!/usr/bin/perl -w
 use strict;
 use File::Basename;
+use Cwd 'realpath';
 use Getopt::Std;
 my $PROGRAM = basename $0;
 my $USAGE=
-"Usage: cat link.ancestor.significant | $PROGRAM link.clust_coeff
+"Usage: cat link.ancestor.significant | $PROGRAM link.clust_coeff cluster.functions
 ";
 
 my %OPT;
 getopts('', \%OPT);
 
-if (!@ARGV) {
+if (@ARGV != 2) {
     print STDERR $USAGE;
     exit 1;
 }
-my ($COEFF_FILE) = @ARGV;
+my ($COEFF_FILE, $FUNCTIONS_FILE) = @ARGV;
 
 my %COEFF;
 open(COEFF, "$COEFF_FILE") || die "$!";
@@ -27,6 +28,33 @@ while (<COEFF>) {
     $COEFF{$f[0]} = $f[1];
 }
 close(COEFF);
+
+my %COG;
+open(FUNCTIONS, "$FUNCTIONS_FILE") || die "$!";
+while (<FUNCTIONS>) {
+    chomp;
+    my @f = split(/\t/, $_, -1);
+    if (@f != 5) {
+        die;
+    }
+    my $cluster = $f[0];
+    my $cog = $f[2];
+    $COG{$cluster} = $cog;
+}
+close(FUNCTIONS);
+
+my $DIR = dirname(realpath($0));
+my $FUNCTION_LABEL_FILE = "$DIR/../etc/function.cog";
+my %FUNCTION_LABEL;
+open(COG, "$FUNCTION_LABEL_FILE") || die "$!";
+while (<COG>) {
+    chomp;
+    if (/^cog\t(\S+)\t(.+)\t/) {
+        my ($cog, $function_label) = ($1, $2);
+        $FUNCTION_LABEL{$cog} = $function_label;
+    }
+}
+close(COG);
 
 my %COUNT;
 my %EDGES;
@@ -68,16 +96,32 @@ sub mean_clust_coeff {
     }
 
     my $coeff_sum = 0;
+    my %count_cog;
     for my $node (keys %node) {
         if (defined $COEFF{$node}) {
             $coeff_sum += $COEFF{$node};
         } else {
             print STDERR "clust_coeff for node $node not found\n";
         }
+        if ($COG{$node}) {
+            my $cog = $COG{$node};
+            $count_cog{$cog}++;
+        }
     }
     my $n_nodes = keys %node;
     my $coeff_mean = $coeff_sum / $n_nodes;
     $coeff_mean = sprintf("%.3f", $coeff_mean);
 
-    return "$n_nodes\t$coeff_mean";
+    my $cog_summary = "";
+    for my $cog (sort {$count_cog{$b} <=> $count_cog{$a}} keys %count_cog) {
+        my $count = $count_cog{$cog};
+        if ($FUNCTION_LABEL{$cog}) {
+            my $function_label = $FUNCTION_LABEL{$cog};
+            $cog_summary = "$cog $function_label ($count/$n_nodes)";
+            last;
+        } else {
+            die $cog;
+        }
+    }
+    return "$n_nodes\t$coeff_mean\t$cog_summary";
 }
