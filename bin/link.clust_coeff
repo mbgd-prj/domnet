@@ -1,0 +1,62 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: $PROGRAM
+";
+
+my %OPT;
+getopts('', \%OPT);
+
+my %EDGE = ();
+while (<>) {
+    chomp;
+    my @f = split(/\t/, $_, -1);
+    if (@f != 14) {
+        die;
+    }
+    my $link = $f[0];
+    my ($start, $end);
+    if ($link =~ /^(\d+)-(\d+)$/) {
+        ($start, $end) = ($1, $2);
+    } else {
+        die;
+    }
+    if ($start != $end) {
+        $EDGE{$start}{$end} = 1;
+        $EDGE{$end}{$start} = 1;
+    }
+}
+
+for my $start (sort {$a<=>$b} keys %EDGE) {
+    my @node = sort {$a<=>$b} keys(%{$EDGE{$start}});
+    my $coeff = clust_coeff(@node);
+    print "$start\t$coeff\n";
+}
+
+################################################################################
+### Function ###################################################################
+################################################################################
+
+sub clust_coeff {
+    my @node = @_;
+
+    my $n_edge = 0;
+    my $n_total = 0;
+    for (my $i=0; $i<@node-1; $i++) {
+        for (my $j=$i+1; $j<@node; $j++) {
+            if ($EDGE{$node[$i]}{$node[$j]}) {
+                $n_edge++;
+            }
+            $n_total++;
+        }
+    }
+
+    if ($n_total) {
+        return $n_edge/$n_total;
+    } else {
+        return 0;
+    }
+}
