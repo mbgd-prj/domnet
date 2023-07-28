@@ -117,8 +117,10 @@ sub mean_clust_coeff {
         my $count = $count_cog{$cog};
         if ($FUNCTION_LABEL{$cog}) {
             my $function_label = $FUNCTION_LABEL{$cog};
-            $cog_summary = "$cog $function_label ($count/$n_nodes)";
-            last;
+            if ($cog_summary) {
+                $cog_summary .= "\t";
+            }
+            $cog_summary .= "$cog $function_label ($count/$n_nodes)";
         } else {
             die $cog;
         }
