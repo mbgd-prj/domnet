@@ -39,10 +39,12 @@ while (<STDIN>) {
     my $edge = $f[0];
     my $tax_name = $f[3];
     my $tax_id = $f[4];
+
     $tax_id =~ s/^taxid://;
-    my $key = "$tax_id\t$tax_name";
-    $COUNT{$key}++;
-    $EDGES{$key} .= " $edge";
+    my $tax = "$tax_id\t$tax_name";
+
+    $COUNT{$tax}++;
+    $EDGES{$tax} .= " $edge";
 }
 
 for my $tax (sort {$COUNT{$b} <=> $COUNT{$a}} keys %COUNT) {
