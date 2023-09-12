@@ -1,0 +1,95 @@
+#!/usr/bin/perl -w
+use strict;
+use File::Basename;
+use Getopt::Std;
+my $PROGRAM = basename $0;
+my $USAGE=
+"Usage: cat LINK_LIST | $PROGRAM CLUSTERS_LIST_FILE...
+-n N_TO_REMOVE
+-d MAX_DEGREE
+-t TAX_NAME
+-T SIGNIFICANT_TAXON_INFO
+";
+
+require "/home/chiba/github/hchiba1/domnet/pm/DomNet.pm";
+
+my %OPT;
+getopts('n:d:t:T:', \%OPT);
+
+my %TAX_NAME = ();
+if ($OPT{t}) {
+    read_values($OPT{t}, \%TAX_NAME);
+}
+
+### Read cluster list ###
+if (!@ARGV) {
+    print STDERR $USAGE;
+    exit 1;
+}
+my @CLUSTER = `cat @ARGV`;
+chomp(@CLUSTER);
+my %CLUSTER = ();
+for my $cluster (@CLUSTER) {
+    $CLUSTER{$cluster} = 1;
+}
+
+### Read link ###
+-t and die $USAGE;
+
+my @HEADER = ("cluster1", "cluster2", "edge_type", "edge_name");
+if ($OPT{t}) {
+    push @HEADER, "prok_euk";
+}
+push @HEADER, ("edge_n_sp", "edge_with_ratio");
+if ($OPT{T}) {
+    push @HEADER, ("significant_taxon", "significant_taxon_full");
+}
+print join("\t", @HEADER), "\n";
+
+my %REPLICATE = ();
+my @LINE = <STDIN>;
+my @LINK = ();
+my %OUT = ();
+for my $line (@LINE) {
+    chomp($line);
+    my ($link, $n_link, $link_ratio, $link_type, $sp_list) = split("\t", $line);
+    my ($cluster1, $cluster2) = split("-", $link);
+    if ($CLUSTER{$cluster1} && $CLUSTER{$cluster2}) {
+    } else {
+        next;
+    }
+    push @LINK, $link;
+
+    my @sp = split(",", $sp_list);
+    my $n_sp = @sp;
+
+    my @out = ();
+    push @out, ($cluster1, $cluster2, "CLUSTERS" , "$cluster1-$cluster2");
+
+    if ($OPT{t}) {
+	push @out, organisms_to_prok_euk($sp_list, \%TAX_NAME);
+    }
+
+    push @out, ($n_sp, $link_ratio);
+
+    $OUT{$link} = join("\t", @out);
+}
+
+if ($OPT{T}) {
+    open(SIGNIFICANT_TAXON_INFO, $OPT{T}) || die;
+    while (<SIGNIFICANT_TAXON_INFO>) {
+	my @f = split("\t", $_);
+	my $link = $f[0];
+	my $significant_taxon_full = $f[3];
+        my $significant_taxon = $significant_taxon_full;
+        if ($significant_taxon_full =~ /(.*) \(\S+\)$/) {
+            $significant_taxon = $1;
+        }
+        print $OUT{$link}, "\t", $significant_taxon, "\t", $significant_taxon_full, "\n";
+    }
+    close(SIGNIFICANT_TAXON_INFO);
+} else {
+    for my $link (@LINK) {
+        print $OUT{$link}, "\n";
+    }
+}
