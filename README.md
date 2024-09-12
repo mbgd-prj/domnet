@@ -1,2 +1,1 @@
-# domnet
-Domain network analysis pipeline
+# Domain network analysis
