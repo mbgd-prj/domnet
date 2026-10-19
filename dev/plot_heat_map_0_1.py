@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from pathlib import Path
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-i', '--input', help='input file', required=True)
@@ -7,10 +8,11 @@ parser.add_argument('-s', '--size', help='label size', default='10,8')
 args = parser.parse_args()
 
 input_file = args.input
-output_file = f'{input_file}_0_1.png'
+output_file = Path(input_file).stem + '_0_1.png'
+link_ancestor = Path(input_file).parent / 'link.ancestor'
 
 label_map = {}
-with open('link.ancestor') as f:
+with open(link_ancestor) as f:
     for line in f:
         cols = line.rstrip("\n").split('\t')
         if len(cols) >= 5:
